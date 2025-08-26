@@ -57,7 +57,8 @@ export const users = defineTable({
   .index("byIsOnboarded", ["isOnboarded"])
   .index("byRole", ["role"])
   .index("byOrganizationAndRole", ["organizationId", "role"])
-  .index("byStatus", ["status"]);
+  .index("byStatus", ["status"])
+  .index("byOrganizationAndStatus", ["organizationId", "status"]);
 
 export const organizations = defineTable({
   ///// Owner of the organization
@@ -69,7 +70,7 @@ export const organizations = defineTable({
 
   ///// Members of the organization
   members: v.array(v.id("users")),
-  
+
   createdAt: v.optional(v.number()),
   updatedAt: v.optional(v.number()),
 })
@@ -83,6 +84,8 @@ export const onboarding = defineTable({
   organizationId: v.id("organizations"),
 
   onboardingStep: v.optional(v.number()),
+
+  isMetaConnected: v.optional(v.boolean()),
 
   ///// Onboarding status
   isCompleted: v.optional(v.boolean()),

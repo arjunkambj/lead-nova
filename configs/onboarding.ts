@@ -4,12 +4,14 @@
 
 export const ONBOARDING_STEPS = {
   CREATE_ORGANIZATION: 1,
-  INVITE_TEAM: 2,
-  OVERVIEW: 3,
+  META_CONNECT: 2,
+  INVITE_TEAM: 3,
+  OVERVIEW: 4,
 } as const;
 
 export const ONBOARDING_ROUTES = {
   [ONBOARDING_STEPS.CREATE_ORGANIZATION]: "/onboarding/create-organization",
+  [ONBOARDING_STEPS.META_CONNECT]: "/onboarding/meta-connect",
   [ONBOARDING_STEPS.INVITE_TEAM]: "/onboarding/invite-team",
   [ONBOARDING_STEPS.OVERVIEW]: "/onboarding/overview",
 } as const;

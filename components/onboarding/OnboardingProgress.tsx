@@ -6,8 +6,9 @@ import { m, LazyMotion, domAnimation } from "framer-motion";
 
 const ONBOARDING_STEPS = [
   { path: "/onboarding/create-organization", step: 1 },
-  { path: "/onboarding/invite-team", step: 2 },
-  { path: "/onboarding/overview", step: 3 },
+  { path: "/onboarding/meta-connect", step: 2 },
+  { path: "/onboarding/invite-team", step: 3 },
+  { path: "/onboarding/overview", step: 4 },
 ];
 
 export default function OnboardingProgress() {

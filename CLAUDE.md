@@ -4,15 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## About Project
 
-LeadNova is a production-grade Next.js and Convex starter kit that provides a complete foundation for building modern SaaS applications. It includes:
+LeadNova is a Facebook Lead Management CRM built with Next.js and Convex, providing real-time lead capture and management from Meta platforms. It includes:
 
+- **Meta Graph API v23.0 Integration** for lead management
+- **Real-time webhook processing** for instant lead capture  
+- **Historical lead sync** with 30-day lookback
+- **Secure token management** with AES-256 encryption
+- **Multi-page support** for managing multiple Facebook pages
+- **Convex Work Pool** for background lead processing
 - **Landing page** with marketing components
 - **Authentication system** using @convex-dev/auth with Google OAuth and OTP via Resend
 - **Convex backend** for real-time database and serverless functions
 - **RBAC and organization management** with role-based access control
 - **Admin panel** for user and organization management
 - **Team management** with invitation system
-- **Multi-step onboarding flow** with progress tracking
+- **Multi-step onboarding flow** with progress tracking (4 steps including Meta connection)
 - **Email integration** with Resend
 - **Production-ready architecture** with proper separation of concerns
 
@@ -142,6 +148,26 @@ leadnova/
 - Step-based progress (1-3)
 - Completion status and timestamps
 
+## Meta Integration
+
+### Overview
+LeadNova integrates with Meta Graph API v23.0 to capture and manage Facebook leads in real-time. The integration supports OAuth authentication, webhook subscriptions, and historical lead synchronization.
+
+### Key Features
+- **OAuth 2.0 Authentication** - Secure token exchange with Meta
+- **Multi-Page Management** - Support for multiple Facebook pages
+- **Real-time Webhooks** - Instant lead capture via Meta webhooks
+- **Historical Sync** - Import 30 days of past leads using Convex Work Pool
+- **Token Encryption** - AES-256 encryption for access tokens
+- **Automatic Refresh** - Token renewal before expiration
+- **Lead Field Mapping** - Flexible field mapping from Facebook forms
+
+### API Configuration
+- **API Version**: v23.0
+- **Scopes**: `pages_show_list`, `pages_read_engagement`, `leads_retrieval`, `pages_manage_metadata`, `pages_manage_ads`
+- **Webhook Fields**: `leadgen`
+- **Historical Sync**: 30 days lookback period
+
 ## Onboarding Flow
 
 ### Overview
@@ -153,12 +179,18 @@ The application features a comprehensive multi-step onboarding flow that guides 
    - Sets organization name and optional image
    - Automatically becomes organization owner
 
-2. **Invite Team** (`/onboarding/invite-team`)
+2. **Connect Meta Account** (`/onboarding/meta-connect`)
+   - OAuth authentication with Facebook
+   - Select Facebook page(s) to manage
+   - Subscribe to lead webhooks
+   - Initiate historical lead sync
+
+3. **Invite Team** (`/onboarding/invite-team`)
    - Optional step to invite team members
    - Can be skipped to proceed to overview
    - Sends email invitations via Resend
 
-3. **Overview** (`/onboarding/overview`)
+4. **Overview** (`/onboarding/overview`)
    - Final onboarding step
    - Shows summary and next steps
    - Marks onboarding as complete
@@ -172,11 +204,12 @@ const route = getOnboardingRoute(
   user.isOnboarded
 );
 
-// Step utilities in lib/onboarding.ts
+// Step utilities in configs/onboarding.ts
 export const ONBOARDING_STEPS = {
   CREATE_ORGANIZATION: 1,
-  INVITE_TEAM: 2,
-  OVERVIEW: 3,
+  META_CONNECT: 2,
+  INVITE_TEAM: 3,
+  OVERVIEW: 4,
 };
 ```
 

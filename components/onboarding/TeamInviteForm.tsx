@@ -130,7 +130,7 @@ export default function TeamInviteForm() {
       });
 
       if (result.success) {
-        await updateOnboardingStep({ step: 3 }); // Update to step 3 after completing step 2
+        await updateOnboardingStep({ step: 4 }); // Update to step 4 after completing step 3
 
         if (result.failed.length > 0) {
           addToast({
@@ -166,7 +166,7 @@ export default function TeamInviteForm() {
   const handleSkip = async () => {
     setIsLoading(true);
     try {
-      await updateOnboardingStep({ step: 3 }); // Update to step 3 when skipping step 2
+      await updateOnboardingStep({ step: 4 }); // Update to step 4 when skipping step 3
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.push("/onboarding/overview" as any);
     } catch {

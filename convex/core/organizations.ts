@@ -18,10 +18,7 @@ function normalizeEmail(email: string): string {
 export const inviteUserToOrganization = mutation({
   args: {
     email: v.string(),
-    role: v.union(
-      v.literal("manager"),
-      v.literal("member")
-    ),
+    role: v.union(v.literal("manager"), v.literal("member")),
     expiresInDays: v.optional(v.number()), // Default 30 days if not specified
   },
   async handler(ctx, args) {
@@ -34,28 +31,29 @@ export const inviteUserToOrganization = mutation({
     }
 
     // Check if inviter is admin
-    if (!await isUserAdmin(ctx, userId)) {
+    if (!(await isUserAdmin(ctx, userId))) {
       throw new Error("Only admins can invite users");
     }
 
     const normalizedEmail = normalizeEmail(args.email);
     const now = Date.now();
     const expiresInDays = args.expiresInDays || 30;
-    const expiresAt = now + (expiresInDays * 24 * 60 * 60 * 1000);
+    const expiresAt = now + expiresInDays * 24 * 60 * 60 * 1000;
 
     // Check if user already exists
-    const existingUsers = await ctx.db
+    const existingUser = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("email"), normalizedEmail))
-      .collect();
-    
-    const existingUser = existingUsers[0];
+      .withIndex("email", (q) => q.eq("email", normalizedEmail))
+      .first();
 
     if (existingUser) {
       if (existingUser.status === "active") {
         throw new Error("User already exists and is active");
       }
-      if (existingUser.status === "invited" && existingUser.organizationId === inviter.organizationId) {
+      if (
+        existingUser.status === "invited" &&
+        existingUser.organizationId === inviter.organizationId
+      ) {
         // Update existing invite
         await ctx.db.patch(existingUser._id, {
           invitedBy: userId,
@@ -64,7 +62,11 @@ export const inviteUserToOrganization = mutation({
           role: args.role,
           updatedAt: now,
         });
-        return { success: true, message: "Invite updated", userId: existingUser._id };
+        return {
+          success: true,
+          message: "Invite updated",
+          userId: existingUser._id,
+        };
       }
     }
 
@@ -92,7 +94,11 @@ export const inviteUserToOrganization = mutation({
       });
     }
 
-    return { success: true, message: "User invited successfully", userId: newUserId };
+    return {
+      success: true,
+      message: "User invited successfully",
+      userId: newUserId,
+    };
   },
 });
 
@@ -111,7 +117,7 @@ export const cancelInvite = mutation({
     }
 
     // Check if user is admin
-    if (!await isUserAdmin(ctx, userId)) {
+    if (!(await isUserAdmin(ctx, userId))) {
       throw new Error("Only admins can cancel invites");
     }
 
@@ -137,7 +143,9 @@ export const cancelInvite = mutation({
     // Remove from organization members
     const organization = await ctx.db.get(admin.organizationId);
     if (organization) {
-      const updatedMembers = organization.members.filter(id => id !== args.invitedUserId);
+      const updatedMembers = organization.members.filter(
+        (id) => id !== args.invitedUserId
+      );
       await ctx.db.patch(admin.organizationId, {
         members: updatedMembers,
         updatedAt: Date.now(),
@@ -163,7 +171,7 @@ export const resendInvite = mutation({
     }
 
     // Check if user is admin
-    if (!await isUserAdmin(ctx, userId)) {
+    if (!(await isUserAdmin(ctx, userId))) {
       throw new Error("Only admins can resend invites");
     }
 
@@ -181,7 +189,7 @@ export const resendInvite = mutation({
     }
 
     const now = Date.now();
-    const expiresAt = now + (30 * 24 * 60 * 60 * 1000); // 30 days from now
+    const expiresAt = now + 30 * 24 * 60 * 60 * 1000; // 30 days from now
 
     // Update invite timestamps
     await ctx.db.patch(args.invitedUserId, {
@@ -206,14 +214,17 @@ export const getInvitedUsers = query({
     // Get all invited users for the organization
     const invitedUsers = await ctx.db
       .query("users")
-      .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
-      .filter((q) => q.eq(q.field("status"), "invited"))
+      .withIndex("byOrganizationAndStatus", (q) =>
+        q.eq("organizationId", user.organizationId!).eq("status", "invited")
+      )
       .collect();
 
     // Add inviter details
     const invitedUsersWithDetails = await Promise.all(
       invitedUsers.map(async (invitedUser) => {
-        const inviter = invitedUser.invitedBy ? await ctx.db.get(invitedUser.invitedBy) : null;
+        const inviter = invitedUser.invitedBy
+          ? await ctx.db.get(invitedUser.invitedBy)
+          : null;
         return {
           ...invitedUser,
           inviterName: inviter?.name || "Unknown",
@@ -233,14 +244,12 @@ export const checkInviteStatus = query({
   },
   async handler(ctx, args) {
     const normalizedEmail = normalizeEmail(args.email);
-    
-    const users = await ctx.db
+
+    const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("email"), normalizedEmail))
-      .collect();
-    
-    const user = users[0];
-    
+      .withIndex("email", (q) => q.eq("email", normalizedEmail))
+      .first();
+
     if (!user) {
       return { hasInvite: false };
     }
@@ -248,7 +257,7 @@ export const checkInviteStatus = query({
     if (user.status === "invited") {
       const now = Date.now();
       const isExpired = user.inviteExpiresAt && user.inviteExpiresAt < now;
-      
+
       return {
         hasInvite: true,
         status: user.status,
@@ -260,7 +269,7 @@ export const checkInviteStatus = query({
       };
     }
 
-    return { 
+    return {
       hasInvite: false,
       status: user.status,
     };
@@ -288,12 +297,12 @@ export const getOrganizationWithMembers = query({
     );
 
     // Filter out null members and categorize by status
-    const validMembers = members.filter(m => m !== null) as Doc<"users">[];
-    
+    const validMembers = members.filter((m) => m !== null) as Doc<"users">[];
+
     return {
       ...organization,
-      activeMembers: validMembers.filter(m => m.status === "active"),
-      invitedMembers: validMembers.filter(m => m.status === "invited"),
+      activeMembers: validMembers.filter((m) => m.status === "active"),
+      invitedMembers: validMembers.filter((m) => m.status === "invited"),
       totalMembers: validMembers.length,
     };
   },
@@ -302,19 +311,23 @@ export const getOrganizationWithMembers = query({
 // Batch invite team members
 export const inviteTeamMembers = mutation({
   args: {
-    members: v.array(v.object({
-      email: v.string(),
-      role: v.union(v.literal("manager"), v.literal("member")),
-    })),
+    members: v.array(
+      v.object({
+        email: v.string(),
+        role: v.union(v.literal("manager"), v.literal("member")),
+      })
+    ),
     expiresInDays: v.optional(v.number()),
   },
   returns: v.object({
     success: v.boolean(),
     invited: v.number(),
-    failed: v.array(v.object({
-      email: v.string(),
-      reason: v.string(),
-    })),
+    failed: v.array(
+      v.object({
+        email: v.string(),
+        reason: v.string(),
+      })
+    ),
   }),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -325,7 +338,7 @@ export const inviteTeamMembers = mutation({
       throw new Error("User not associated with an organization");
     }
 
-    if (!await isUserAdmin(ctx, userId)) {
+    if (!(await isUserAdmin(ctx, userId))) {
       throw new Error("Only admins can invite users");
     }
 
@@ -336,7 +349,7 @@ export const inviteTeamMembers = mutation({
 
     const now = Date.now();
     const expiresInDays = args.expiresInDays || 30;
-    const expiresAt = now + (expiresInDays * 24 * 60 * 60 * 1000);
+    const expiresAt = now + expiresInDays * 24 * 60 * 60 * 1000;
 
     let invited = 0;
     const failed: { email: string; reason: string }[] = [];
@@ -346,19 +359,23 @@ export const inviteTeamMembers = mutation({
       const normalizedEmail = normalizeEmail(member.email);
 
       try {
-        const existingUsers = await ctx.db
+        const existingUser = await ctx.db
           .query("users")
-          .filter((q) => q.eq(q.field("email"), normalizedEmail))
-          .collect();
-        
-        const existingUser = existingUsers[0];
+          .withIndex("email", (q) => q.eq("email", normalizedEmail))
+          .first();
 
         if (existingUser) {
           if (existingUser.status === "active") {
-            failed.push({ email: member.email, reason: "User already exists and is active" });
+            failed.push({
+              email: member.email,
+              reason: "User already exists and is active",
+            });
             continue;
           }
-          if (existingUser.status === "invited" && existingUser.organizationId === inviter.organizationId) {
+          if (
+            existingUser.status === "invited" &&
+            existingUser.organizationId === inviter.organizationId
+          ) {
             await ctx.db.patch(existingUser._id, {
               invitedBy: userId,
               invitedAt: now,
@@ -387,9 +404,10 @@ export const inviteTeamMembers = mutation({
         newMemberIds.push(newUserId);
         invited++;
       } catch (error) {
-        failed.push({ 
-          email: member.email, 
-          reason: error instanceof Error ? error.message : "Failed to invite user" 
+        failed.push({
+          email: member.email,
+          reason:
+            error instanceof Error ? error.message : "Failed to invite user",
         });
       }
     }
@@ -409,4 +427,3 @@ export const inviteTeamMembers = mutation({
     };
   },
 });
-

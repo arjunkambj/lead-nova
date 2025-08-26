@@ -143,11 +143,11 @@ export const createOrganization = mutation({
         updatedAt: now,
       });
     } else {
-      // Create new onboarding record starting at step 2
+      // Create new onboarding record starting at step 2 (Meta Connect)
       onboardingId = await ctx.db.insert("onboarding", {
         userId,
         organizationId,
-        onboardingStep: 2, // Start at step 2 since org creation is done
+        onboardingStep: 2, // Start at step 2 (Meta Connect) since org creation is done
         isCompleted: false,
         startedAt: now,
         createdAt: now,
@@ -243,7 +243,7 @@ export const updateOnboardingStep = mutation({
 
     return {
       success: true,
-      nextStep: args.step < 3 ? args.step + 1 : undefined,
+      nextStep: args.step < 4 ? args.step + 1 : undefined,
     };
   },
 });
@@ -299,6 +299,7 @@ export const getOnboardingStatus = query({
       userId: v.id("users"),
       organizationId: v.id("organizations"),
       onboardingStep: v.optional(v.number()),
+      isMetaConnected: v.optional(v.boolean()),
       isCompleted: v.optional(v.boolean()),
       startedAt: v.optional(v.number()),
       completedAt: v.optional(v.number()),
@@ -332,6 +333,7 @@ export const getOnboardingStatus = query({
       userId: onboarding.userId,
       organizationId: onboarding.organizationId,
       onboardingStep: onboarding.onboardingStep,
+      isMetaConnected: onboarding.isMetaConnected,
       isCompleted: onboarding.isCompleted,
       startedAt: onboarding.startedAt,
       completedAt: onboarding.completedAt,
@@ -374,7 +376,7 @@ export const skipOnboardingStep = mutation({
 
     const now = Date.now();
     const nextStep = args.currentStep + 1;
-    const isLastStep = args.currentStep >= 3;
+    const isLastStep = args.currentStep >= 4;
 
     if (isLastStep) {
       await ctx.db.patch(onboarding._id, {
@@ -405,6 +407,52 @@ export const skipOnboardingStep = mutation({
         nextStep,
       };
     }
+  },
+});
+
+export const updateMetaConnectionStatus = mutation({
+  args: {
+    isConnected: v.boolean(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await ctx.db.get(userId);
+    if (!user || !user.organizationId) {
+      throw new Error("User or organization not found");
+    }
+
+    const onboarding = await ctx.db
+      .query("onboarding")
+      .withIndex("byUserOrganization", (q) => 
+        q.eq("userId", userId).eq("organizationId", user.organizationId!)
+      )
+      .first();
+
+    if (!onboarding) {
+      throw new Error("Onboarding record not found");
+    }
+
+    const now = Date.now();
+    
+    // Update Meta connection status and advance to next step if connected
+    const updates: Record<string, unknown> = {
+      isMetaConnected: args.isConnected,
+      updatedAt: now,
+    };
+
+    // If Meta is connected and we're on step 2, advance to step 3
+    if (args.isConnected && onboarding.onboardingStep === 2) {
+      updates.onboardingStep = 3;
+    }
+
+    await ctx.db.patch(onboarding._id, updates);
+
+    return { success: true };
   },
 });
 
