@@ -24,9 +24,11 @@ LeadNova is a Facebook Lead Management CRM built with Next.js and Convex, provid
 
 ## Must Follow Rules
 
-- Always use iconify/react for icons
-- Dont Use opacity class like color/xx use them redirectly
-- Always use Colors from style/hero.ts
+- **Read rule files for specific guidelines:**
+  - `/home/honey/code/leadnova/rules_style.md` - UI, styling, HeroUI, colors, icons
+  - `/home/honey/code/leadnova/rules_convex.md` - Convex functions, queries, mutations
+  - `/home/honey/code/leadnova/rules_performance.md` - Performance optimizations
+
 - **IMPORTANT: Server Components Rule** - Always keep pages in `/app` folder as server components
 - All client-side logic should be extracted into subcomponents in `/components`
 - Use `"use client"` directive only in component files, never in pages
@@ -285,50 +287,15 @@ export function getOnboardingRoute(
 }
 ```
 
-## Convex Development Rules
+## Convex Development
 
-### Core Principles
-
-- **ALWAYS read `/home/honey/code/leadnova/convex_rules.md` before writing any Convex function**
-- Follow strict guidelines in `convex_rules.md`
-- Use context7 MCP server for latest Convex documentation
-
-### Query Guidelines
-
-- **NEVER use filters in queries** - always use indexes
-- Define indexes in schema and use `withIndex` in queries
-- Example:
-  ```tsx
-  const users = await ctx.db
-    .query("users")
-    .withIndex("byOrganization", (q) => q.eq("organizationId", orgId))
-    .collect();
-  ```
-
-### Function Syntax
-
-- Use new function syntax with explicit validators:
-  ```tsx
-  export const getUser = query({
-    args: { userId: v.id("users") },
-    returns: v.union(
-      v.object({
-        /* user fields */
-      }),
-      v.null()
-    ),
-    handler: async (ctx, args) => {
-      return await ctx.db.get(args.userId);
-    },
-  });
-  ```
-
-### Validators
-
-- Always include argument validators
-- Always include return validators
-- Use `v.null()` for functions returning null
-- Use proper union types for nullable returns
+**See `/home/honey/code/leadnova/rules_convex.md` for complete Convex guidelines** including:
+- Function syntax and validators
+- Query patterns and indexing
+- Mutation and action patterns
+- Schema design
+- File storage
+- Error handling
 
 ## Authentication Flow
 
@@ -347,26 +314,15 @@ export async function getAuthUserId(ctx) {
 }
 ```
 
-## Styling Guidelines
+## Styling
 
-### Theme Configuration
-
-- Import colors from `/home/honey/code/leadnova/style/hero.ts`
-- HeroUI theme with custom Meyoo theme
-- Color palette:
-  - Primary: Indigo
-  - Secondary: Blue
-  - Success: Emerald
-  - Warning: Orange
-  - Danger: Rose
-- Light/dark mode support with Zinc base colors
-
-### Component Styling
-
-- Use Tailwind CSS classes
-- Leverage HeroUI component variants
-- Maintain consistent spacing and typography
-- Follow responsive design patterns
+**See `/home/honey/code/leadnova/rules_style.md` for complete styling guidelines** including:
+- HeroUI component usage
+- Theme colors and configuration
+- Tailwind CSS patterns
+- Dark mode support
+- Typography and spacing
+- Form styling
 
 ## Component Guidelines
 
@@ -432,21 +388,15 @@ Configure TypeScript and build tools to use:
 - Test authentication flows
 - Validate organization management
 
-## Performance Optimization
+## Performance
 
-### Next.js Optimizations
-
-- Use Turbopack for faster builds
-- Implement proper code splitting
-- Optimize images with Next.js Image component
-- Use dynamic imports for heavy components
-
-### Convex Optimizations
-
-- Design efficient indexes
-- Minimize query complexity
-- Use pagination for large datasets
-- Cache frequently accessed data
+**See `/home/honey/code/leadnova/rules_performance.md` for complete performance guidelines** including:
+- Query optimization patterns
+- Component memoization
+- Server vs client components
+- Loading state management
+- Convex-specific optimizations
+- HeroUI performance tips
 
 ## Security Best Practices
 
