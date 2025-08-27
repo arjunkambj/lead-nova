@@ -26,7 +26,7 @@ export default function Hero() {
         >
           <HeroAvatarGroup />
           <span className="text-xs font-semibold text-default-600">
-            Production-ready starter kit
+            Trusted by 1,000+ businesses
           </span>
         </motion.div>
 
@@ -38,9 +38,9 @@ export default function Hero() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="font-extrabold tracking-tight text-4xl sm:text-5xl md:text-[56px] xl:text-[64px] leading-[1.08] bg-gradient-to-r from-default-900 to-default-700 bg-clip-text text-transparent"
         >
-          Build Your SaaS Faster
+          Capture Facebook Leads
           <br className="hidden sm:block" />
-          with Convex & Next.js
+          in Real-Time
         </motion.h1>
 
         <motion.p
@@ -49,8 +49,8 @@ export default function Hero() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mt-3 text-[15px] sm:text-base md:text-[18px] text-default-600 max-w-2xl mx-auto"
         >
-          Production-ready starter with Convex real-time backend, authentication,
-          Polar subscriptions, team management, and admin panel—all set up and ready to ship.
+          The ultimate CRM for Facebook lead management. Instantly capture leads from Meta platforms,
+          manage your team, and scale your business with real-time synchronization.
         </motion.p>
 
         <motion.div

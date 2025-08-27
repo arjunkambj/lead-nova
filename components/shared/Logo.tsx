@@ -13,7 +13,9 @@ export default function Logo({ className }: { className?: string }) {
           />
         </svg>
 
-        <h1 className="text-xl font-semibold hover:cursor-pointer">Acme</h1>
+        <h1 className="text-lg font-semibold hover:cursor-pointer">
+          Lead Nova
+        </h1>
       </div>
     </Link>
   );
