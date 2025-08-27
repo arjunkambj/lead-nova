@@ -9,14 +9,19 @@ export default async function AppLayout({
   return (
     <>
       {/* Check if user is onboarded, redirect to /onboarding if not */}
-      <AuthRedirect requireOnboarded={true} redirectTo="/onboarding" />
-      
+      <AuthRedirect
+        requireOnboarded={true}
+        redirectTo="/onboarding/create-organization"
+      />
+
       <div className="flex h-screen w-full bg-background py-3">
         <aside className="h-full">
           <DashboardSidebar />
         </aside>
         <main className="flex flex-col min-w-0 w-full">
-          <section className="flex-1 py-4 px-6 overflow-auto">{children}</section>
+          <section className="flex-1 py-4 px-6 overflow-auto">
+            {children}
+          </section>
         </main>
         {/* Floating Agent Mode Button */}
       </div>
