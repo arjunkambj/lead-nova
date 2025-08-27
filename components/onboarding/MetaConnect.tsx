@@ -7,7 +7,7 @@ import { Icon } from "@iconify/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/hooks/useUser";
-import { useSkipOnboardingStep } from "@/hooks/useOnboarding";
+import { useSkipOnboardingStep, useOnboardingStatus, useUpdateOnboardingStep } from "@/hooks/useOnboarding";
 import { toast } from "sonner";
 
 export default function MetaConnect() {
@@ -15,6 +15,8 @@ export default function MetaConnect() {
   const searchParams = useSearchParams();
   const user = useCurrentUser();
   const skipOnboardingStep = useSkipOnboardingStep();
+  const onboardingStatus = useOnboardingStatus();
+  const updateOnboardingStep = useUpdateOnboardingStep();
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [selectedPages, setSelectedPages] = useState<
@@ -30,6 +32,17 @@ export default function MetaConnect() {
   const disconnectMeta = useMutation(
     api.integration.meta.disconnectMetaAccount
   );
+  
+  // Check if we need to sync onboarding step with Meta connection status
+  useEffect(() => {
+    if (connectionStatus?.isConnected && onboardingStatus) {
+      // If Meta is connected but onboarding doesn't reflect it
+      if (!onboardingStatus.isMetaConnected && onboardingStatus.onboardingStep === 2) {
+        // Auto-advance to step 3 since Meta is already connected
+        updateOnboardingStep({ step: 3 }).catch(console.error);
+      }
+    }
+  }, [connectionStatus, onboardingStatus, updateOnboardingStep]);
 
   // Check for OAuth callback parameters
   useEffect(() => {
@@ -105,7 +118,15 @@ export default function MetaConnect() {
   };
 
   const handleContinue = async () => {
-    // Connection successful, advance to step 3 (already updated by connectMetaAccount)
+    // Ensure we're on the right step before continuing
+    if (onboardingStatus && onboardingStatus.onboardingStep && onboardingStatus.onboardingStep < 3) {
+      try {
+        await updateOnboardingStep({ step: 3 });
+      } catch (error) {
+        console.error("Failed to update step:", error);
+      }
+    }
+    // Connection successful, advance to step 3
     router.push("/onboarding/invite-team");
   };
 

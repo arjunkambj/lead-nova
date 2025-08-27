@@ -1,23 +1,28 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Spinner } from "@heroui/react";
 import { useOnboardingStatus } from "@/hooks/useOnboarding";
 import { useCurrentUser } from "@/hooks/useUser";
-import { getOnboardingRoute } from "@/configs/onboarding";
+import { getOnboardingRoute, ONBOARDING_ROUTES } from "@/configs/onboarding";
 
 export default function OnboardingRedirect() {
   const router = useRouter();
   const pathname = usePathname();
   const onboardingStatus = useOnboardingStatus();
   const user = useCurrentUser();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
+    // Prevent multiple redirects
+    if (hasRedirected) return;
+    
     if (!user) return; // Still loading user
 
     // If user is already fully onboarded, redirect to main overview
     if (user.isOnboarded) {
+      setHasRedirected(true);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.replace("/overview" as any);
       return;
@@ -25,6 +30,7 @@ export default function OnboardingRedirect() {
 
     // If no organization, start from the beginning
     if (!user.organizationId) {
+      setHasRedirected(true);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.replace("/onboarding/create-organization" as any);
       return;
@@ -35,6 +41,7 @@ export default function OnboardingRedirect() {
 
     // If no onboarding record exists, create one by going to step 1
     if (!onboardingStatus) {
+      setHasRedirected(true);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.replace("/onboarding/create-organization" as any);
       return;
@@ -46,13 +53,30 @@ export default function OnboardingRedirect() {
       onboardingStatus.isCompleted,
       user.isOnboarded
     );
+    
+    // Validate step progression - don't allow skipping steps
+    const currentStep = onboardingStatus.onboardingStep || 1;
+    const stepRoutes = Object.values(ONBOARDING_ROUTES) as string[];
+    
+    // Get the index of the current path in the step routes
+    const currentPathIndex = stepRoutes.indexOf(pathname);
+    
+    // If user is trying to access a step they haven't reached yet
+    if (currentPathIndex >= 0 && currentPathIndex + 1 > currentStep) {
+      // Redirect to the correct step
+      setHasRedirected(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.replace(route as any);
+      return;
+    }
 
     // Only redirect if we're not already on the correct route
     if (pathname !== route) {
+      setHasRedirected(true);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.replace(route as any);
     }
-  }, [onboardingStatus, user, router, pathname]);
+  }, [onboardingStatus, user, router, pathname, hasRedirected]);
 
   // Show loading while determining redirect
   return (

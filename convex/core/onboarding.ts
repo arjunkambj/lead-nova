@@ -42,8 +42,9 @@ async function updateExistingOrganization(
     const onboardingId = await ctx.db.insert("onboarding", {
       userId: user._id,
       organizationId,
-      onboardingStep: 1, // Start at step 1 for consistency
+      onboardingStep: 2, // Move to step 2 after org creation/update
       isCompleted: false,
+      isMetaConnected: false,
       startedAt: now,
       createdAt: now,
       updatedAt: now,
@@ -56,7 +57,13 @@ async function updateExistingOrganization(
     };
   }
 
-  // Don't auto-advance steps when updating organization
+  // Update onboarding step to 2 if we're still on step 1
+  if (onboarding.onboardingStep === 1) {
+    await ctx.db.patch(onboarding._id, {
+      onboardingStep: 2,
+      updatedAt: now,
+    });
+  }
 
   return {
     success: true,
@@ -141,10 +148,12 @@ export const createOrganization = mutation({
       // Use existing onboarding record
       onboardingId = existingOnboarding._id;
       // Update step to 2 since organization creation is complete
-      await ctx.db.patch(onboardingId, {
-        onboardingStep: 2,
-        updatedAt: now,
-      });
+      if (existingOnboarding.onboardingStep === 1) {
+        await ctx.db.patch(onboardingId, {
+          onboardingStep: 2,
+          updatedAt: now,
+        });
+      }
     } else {
       // Create new onboarding record starting at step 2 (Meta Connect)
       onboardingId = await ctx.db.insert("onboarding", {
@@ -152,6 +161,7 @@ export const createOrganization = mutation({
         organizationId,
         onboardingStep: 2, // Start at step 2 (Meta Connect) since org creation is done
         isCompleted: false,
+        isMetaConnected: false,
         startedAt: now,
         createdAt: now,
         updatedAt: now,
@@ -485,32 +495,53 @@ export const resetOnboarding = mutation({
       .first();
 
     if (!onboarding) {
-      throw new Error("Onboarding record not found");
+      // If no onboarding record exists, create one
+      const now = Date.now();
+      await ctx.db.insert("onboarding", {
+        userId,
+        organizationId: user.organizationId,
+        onboardingStep: 1,
+        isCompleted: false,
+        isMetaConnected: false,
+        startedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      
+      // Reset user onboarded status
+      await ctx.db.patch(userId, {
+        isOnboarded: false,
+        updatedAt: now,
+      });
+      
+      return { success: true };
     }
 
     const now = Date.now();
     
-    // Disconnect Meta integration if exists
-    const metaIntegration = await ctx.db
+    // Properly disconnect all Meta integrations for this organization
+    const metaIntegrations = await ctx.db
       .query("metaIntegrations")
-      .withIndex("byOrganizationAndActive", (q) =>
-        q.eq("organizationId", user.organizationId!).eq("isActive", true)
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", user.organizationId!)
       )
-      .first();
+      .collect();
     
-    if (metaIntegration) {
-      await ctx.db.patch(metaIntegration._id, {
+    // Deactivate all Meta integrations
+    for (const integration of metaIntegrations) {
+      await ctx.db.patch(integration._id, {
         isActive: false,
         updatedAt: now,
       });
     }
     
-    // Reset onboarding record
+    // Reset onboarding record completely
     await ctx.db.patch(onboarding._id, {
       onboardingStep: 1,
       isMetaConnected: false,
       isCompleted: false,
       completedAt: undefined,
+      startedAt: now, // Reset the start time as well
       updatedAt: now,
     });
 

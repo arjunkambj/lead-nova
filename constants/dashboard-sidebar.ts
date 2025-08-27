@@ -1,25 +1,46 @@
-export const DASHBOARD_SIDEBAR_ITEMS = [
+// Direct navigation items (not in categories)
+export const DASHBOARD_DIRECT_ITEMS = [
   {
-    label: "Can be Anything",
-    items: [
-      {
-        key: "lorum-ipsum-2",
-        href: "/lorum-ipsum-2",
-        icon: "solar:chart-square-linear",
-        activeIcon: "solar:chart-square-bold",
-        label: "Lorum Ipsum",
-      },
-    ],
+    key: "overview",
+    href: "/overview",
+    icon: "lucide:chart-bar",
+    activeIcon: "lucide:chart-bar",
+    label: "Overview",
   },
   {
-    label: "Can be Anything 2",
+    key: "leads",
+    href: "/leads",
+    icon: "lucide:users",
+    activeIcon: "lucide:users",
+    label: "Leads",
+  },
+];
+
+// Category items with sub-navigation
+export const DASHBOARD_SIDEBAR_ITEMS = [
+  {
+    label: "Workflows",
     items: [
       {
-        key: "lorum-ipsum",
-        href: "/lorum-ipsum",
-        icon: "solar:layers-minimalistic-linear",
-        activeIcon: "solar:layers-minimalistic-bold",
-        label: "Lorum Ipsum",
+        key: "tasks",
+        href: "/tasks",
+        icon: "lucide:check-square",
+        activeIcon: "lucide:check-square",
+        label: "Tasks",
+      },
+      {
+        key: "meetings",
+        href: "/meetings",
+        icon: "lucide:calendar",
+        activeIcon: "lucide:calendar",
+        label: "Meetings",
+      },
+      {
+        key: "invoices",
+        href: "/invoices",
+        icon: "lucide:file-text",
+        activeIcon: "lucide:file-text",
+        label: "Invoices",
       },
     ],
   },
@@ -27,17 +48,24 @@ export const DASHBOARD_SIDEBAR_ITEMS = [
 
 export const DASHBOARD_FOOTER_ITEMS = [
   {
-    key: "team-management",
-    href: "/team-management",
-    icon: "solar:users-group-two-rounded-linear",
-    activeIcon: "solar:users-group-two-rounded-bold",
-    label: "Team Management",
+    key: "integrations",
+    href: "/integrations",
+    icon: "lucide:plug",
+    activeIcon: "lucide:plug",
+    label: "Integrations",
+  },
+  {
+    key: "team",
+    href: "/team",
+    icon: "lucide:users-2",
+    activeIcon: "lucide:users-2",
+    label: "Team",
   },
   {
     key: "settings",
     href: "/settings",
-    icon: "solar:settings-linear",
-    activeIcon: "solar:settings-bold",
+    icon: "lucide:settings",
+    activeIcon: "lucide:settings",
     label: "Settings",
   },
 ];

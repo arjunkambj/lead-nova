@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Button, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { addToast } from "@heroui/react";
@@ -21,27 +21,27 @@ export default function OrganizationForm() {
     mobileNumber?: string; 
   }>({});
   const [isEditMode, setIsEditMode] = React.useState(false);
+  const hasInitialized = useRef(false);
 
   const createOrganization = useCreateOrganization();
   const onboardingStatus = useOnboardingStatus();
   const user = useCurrentUser();
 
-  // Handle form data population
+  // Handle form data population - only once on initial load
   useEffect(() => {
-    // Populate form with existing organization data if available
-    if (onboardingStatus?.organization) {
+    // Only populate form once when organization data is first available
+    if (onboardingStatus?.organization && !hasInitialized.current) {
+      hasInitialized.current = true;
       setIsEditMode(true);
-      if (!name) {  // Only set if not already set to avoid overwriting user edits
-        setName(onboardingStatus.organization.name);
-      }
-      if (!mobileNumber && onboardingStatus.organization.mobileNumber) {
+      setName(onboardingStatus.organization.name);
+      if (onboardingStatus.organization.mobileNumber) {
         setMobileNumber(onboardingStatus.organization.mobileNumber);
       }
-      if (!operatingCity && onboardingStatus.organization.operatingCity) {
+      if (onboardingStatus.organization.operatingCity) {
         setOperatingCity(onboardingStatus.organization.operatingCity);
       }
     }
-  }, [onboardingStatus, name, mobileNumber, operatingCity]);
+  }, [onboardingStatus?.organization]);
 
   // Only check for user, not onboardingStatus
   if (!user) {
@@ -109,7 +109,7 @@ export default function OrganizationForm() {
           color: "success",
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        router.push("/onboarding/invite-team" as any);
+        router.push("/onboarding/meta-connect" as any);
       }
     } catch (error) {
       addToast({
