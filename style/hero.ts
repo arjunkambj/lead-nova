@@ -6,23 +6,8 @@ const config = heroui({
     light: {
       extend: "light",
       colors: {
-        // Primary - Indigo
+        // Primary - Blue
         primary: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          800: "#3730a3",
-          900: "#312e81",
-          foreground: "#ffffff",
-          DEFAULT: "#6366f1",
-        },
-        // Secondary - Blue
-        secondary: {
           50: "#eff6ff",
           100: "#dbeafe",
           200: "#bfdbfe",
@@ -35,6 +20,21 @@ const config = heroui({
           900: "#1e3a8a",
           foreground: "#ffffff",
           DEFAULT: "#3b82f6",
+        },
+        // Secondary - Violet
+        secondary: {
+          50: "#f5f3ff",
+          100: "#ede9fe",
+          200: "#ddd6fe",
+          300: "#c4b5fd",
+          400: "#a78bfa",
+          500: "#8b5cf6",
+          600: "#7c3aed",
+          700: "#6d28d9",
+          800: "#5b21b6",
+          900: "#4c1d95",
+          foreground: "#ffffff",
+          DEFAULT: "#8b5cf6",
         },
         // Success - Emerald
         success: {
@@ -115,7 +115,7 @@ const config = heroui({
           DEFAULT: "#d4d4d8",
           foreground: "#11181C",
         },
-        focus: "#6366f1",
+        focus: "#3b82f6",
         divider: {
           DEFAULT: "#e4e4e7",
         },
@@ -125,35 +125,35 @@ const config = heroui({
     dark: {
       extend: "dark",
       colors: {
-        // Primary - Indigo
+        // Primary - Blue
         primary: {
-          50: "#312e81",
-          100: "#3730a3",
-          200: "#4338ca",
-          300: "#4f46e5",
-          400: "#6366f1",
-          500: "#818cf8",
-          600: "#a5b4fc",
-          700: "#c7d2fe",
-          800: "#e0e7ff",
-          900: "#eef2ff",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
           foreground: "#ffffff",
-          DEFAULT: "#6366f1",
+          DEFAULT: "#3b82f6",
         },
-        // Secondary - Blue
+        // Secondary - Violet
         secondary: {
-          50: "#1e3a8a",
-          100: "#1e40af",
-          200: "#1d4ed8",
-          300: "#2563eb",
-          400: "#3b82f6",
-          500: "#60a5fa",
-          600: "#93c5fd",
-          700: "#bfdbfe",
-          800: "#dbeafe",
-          900: "#eff6ff",
+          50: "#f5f3ff",
+          100: "#ede9fe",
+          200: "#ddd6fe",
+          300: "#c4b5fd",
+          400: "#a78bfa",
+          500: "#8b5cf6",
+          600: "#7c3aed",
+          700: "#6d28d9",
+          800: "#5b21b6",
+          900: "#4c1d95",
           foreground: "#ffffff",
-          DEFAULT: "#2563eb",
+          DEFAULT: "#8b5cf6",
         },
         // Success - Emerald
         success: {
@@ -234,7 +234,7 @@ const config = heroui({
           DEFAULT: "#52525b",
           foreground: "#ECEDEE",
         },
-        focus: "#6366f1",
+        focus: "#3b82f6",
         divider: {
           DEFAULT: "#3f3f46",
         },
