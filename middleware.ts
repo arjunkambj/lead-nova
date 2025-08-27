@@ -25,6 +25,10 @@ export default convexAuthNextjsMiddleware(
 
 export const config = {
   // The following matcher runs middleware on all routes
-  // except static assets.
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  // except static assets and specific API routes that handle their own auth
+  matcher: [
+    "/((?!.*\\..*|_next|api/meta/auth|api/meta/callback).*)",
+    "/",
+    "/(trpc)(.*)"
+  ],
 };
