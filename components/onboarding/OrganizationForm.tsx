@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 import { Button, Input, Spinner } from "@heroui/react";
-import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { addToast } from "@heroui/react";
 import {
@@ -14,8 +13,13 @@ import { useCurrentUser } from "@/hooks/useUser";
 export default function OrganizationForm() {
   const router = useRouter();
   const [name, setName] = React.useState("");
+  const [mobileNumber, setMobileNumber] = React.useState("");
+  const [operatingCity, setOperatingCity] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState<{ name?: string }>({});
+  const [errors, setErrors] = React.useState<{ 
+    name?: string; 
+    mobileNumber?: string; 
+  }>({});
   const [isEditMode, setIsEditMode] = React.useState(false);
 
   const createOrganization = useCreateOrganization();
@@ -30,8 +34,14 @@ export default function OrganizationForm() {
       if (!name) {  // Only set if not already set to avoid overwriting user edits
         setName(onboardingStatus.organization.name);
       }
+      if (!mobileNumber && onboardingStatus.organization.mobileNumber) {
+        setMobileNumber(onboardingStatus.organization.mobileNumber);
+      }
+      if (!operatingCity && onboardingStatus.organization.operatingCity) {
+        setOperatingCity(onboardingStatus.organization.operatingCity);
+      }
     }
-  }, [onboardingStatus, name]);
+  }, [onboardingStatus, name, mobileNumber, operatingCity]);
 
   // Only check for user, not onboardingStatus
   if (!user) {
@@ -45,17 +55,29 @@ export default function OrganizationForm() {
   const handleNameChange = (value: string) => {
     setName(value);
     if (errors.name) {
-      setErrors({ name: undefined });
+      setErrors({ ...errors, name: undefined });
+    }
+  };
+
+  const handleMobileNumberChange = (value: string) => {
+    setMobileNumber(value);
+    if (errors.mobileNumber) {
+      setErrors({ ...errors, mobileNumber: undefined });
     }
   };
 
   const validateForm = () => {
-    const newErrors: { name?: string } = {};
+    const newErrors: { name?: string; mobileNumber?: string } = {};
 
     if (!name.trim()) {
       newErrors.name = "Organization name is required";
     } else if (name.trim().length < 2) {
       newErrors.name = "Name must be at least 2 characters";
+    }
+
+    // Validate mobile number if provided
+    if (mobileNumber && !/^[+]?[\d\s()-]+$/.test(mobileNumber)) {
+      newErrors.mobileNumber = "Please enter a valid mobile number";
     }
 
     setErrors(newErrors);
@@ -74,6 +96,8 @@ export default function OrganizationForm() {
     try {
       const result = await createOrganization({
         name: name.trim(),
+        mobileNumber: mobileNumber.trim() || undefined,
+        operatingCity: operatingCity.trim() || undefined,
       });
 
       if (result.success) {
@@ -106,7 +130,7 @@ export default function OrganizationForm() {
       <div className="flex flex-col gap-4">
         <div>
           <label className="text-sm font-medium text-default-700 mb-2 block">
-            Name
+            Name <span className="text-danger">*</span>
           </label>
           <Input
             placeholder="Acme Inc."
@@ -115,6 +139,7 @@ export default function OrganizationForm() {
             isInvalid={!!errors.name}
             errorMessage={errors.name}
             description="This is the name that will be displayed to your team members."
+            isRequired
             classNames={{
               input: "text-sm",
               description: "text-xs",
@@ -124,24 +149,36 @@ export default function OrganizationForm() {
 
         <div>
           <label className="text-sm font-medium text-default-700 mb-2 block">
-            Logo
+            Mobile Number
           </label>
-          <div className="border-2 border-dashed border-default-200 rounded-lg p-8 text-center hover:border-default-300 transition-colors cursor-pointer">
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-lg bg-default-100 flex items-center justify-center">
-                <Icon
-                  icon="solar:camera-add-linear"
-                  width={24}
-                  className="text-default-500"
-                />
-              </div>
-              <p className="text-sm text-default-500">
-                Drag and drop or click to select an image
-              </p>
-              <p className="text-xs text-default-400">Maximum size: 2 MB</p>
-              <p className="text-xs text-warning-500">(TODO: Image upload)</p>
-            </div>
-          </div>
+          <Input
+            placeholder="+1 (555) 123-4567"
+            value={mobileNumber}
+            onValueChange={handleMobileNumberChange}
+            isInvalid={!!errors.mobileNumber}
+            errorMessage={errors.mobileNumber}
+            description="Contact number for your organization (optional)."
+            classNames={{
+              input: "text-sm",
+              description: "text-xs",
+            }}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-default-700 mb-2 block">
+            Operating City
+          </label>
+          <Input
+            placeholder="New York"
+            value={operatingCity}
+            onValueChange={setOperatingCity}
+            description="Primary city where your organization operates (optional)."
+            classNames={{
+              input: "text-sm",
+              description: "text-xs",
+            }}
+          />
         </div>
       </div>
 

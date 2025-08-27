@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 LeadNova is a Facebook Lead Management CRM built with Next.js and Convex, providing real-time lead capture and management from Meta platforms. It includes:
 
 - **Meta Graph API v23.0 Integration** for lead management
-- **Real-time webhook processing** for instant lead capture  
+- **Real-time webhook processing** for instant lead capture
 - **Historical lead sync** with 30-day lookback
 - **Secure token management** with AES-256 encryption
 - **Multi-page support** for managing multiple Facebook pages
@@ -24,8 +24,9 @@ LeadNova is a Facebook Lead Management CRM built with Next.js and Convex, provid
 
 ## Must Follow Rules
 
-### Server/Client Component Architecture
-
+- Always use iconify/react for icons
+- Dont Use opacity class like color/xx use them redirectly
+- Always use Colors from style/hero.ts
 - **IMPORTANT: Server Components Rule** - Always keep pages in `/app` folder as server components
 - All client-side logic should be extracted into subcomponents in `/components`
 - Use `"use client"` directive only in component files, never in pages
@@ -38,12 +39,13 @@ LeadNova is a Facebook Lead Management CRM built with Next.js and Convex, provid
 - Create custom hooks in `/hooks` folder that wrap Convex functionality
 - This separation ensures clean architecture and proper server/client boundaries
 - Example pattern:
+
   ```tsx
   // hooks/useUser.ts
   export function useCurrentUser() {
     return useQuery(api.core.users.getCurrentUser);
   }
-  
+
   // components/UserProfile.tsx
   import { useCurrentUser } from "@/hooks/useUser";
   ```
@@ -63,15 +65,18 @@ LeadNova is a Facebook Lead Management CRM built with Next.js and Convex, provid
 **Package Manager: Bun** - Always use `bun` instead of npm/yarn/pnpm
 
 **Development:**
+
 - `bun run dev` - Start Next.js development server with Turbopack
 - `bunx convex dev` - Start Convex backend development (run in separate terminal)
 
 **Build & Production:**
+
 - `bun run build` - Build Next.js application with Turbopack
 - `bun run start` - Start production server
 - `bunx convex deploy` - Deploy Convex backend to production
 
 **Code Quality:**
+
 - `bun run lint` - Run ESLint with auto-fix
 - `bun run typecheck` - Run TypeScript type checking without emitting files
 
@@ -130,6 +135,7 @@ leadnova/
 ### Database Schema
 
 **users**
+
 - Core user data with authentication info
 - Links to organization via `organizationId`
 - Tracks onboarding status with `isOnboarded`
@@ -138,11 +144,13 @@ leadnova/
 - Invitation tracking with `invitedBy`, `invitedAt`, `inviteExpiresAt`
 
 **organizations**
+
 - Organization details with owner reference
 - Member list array
 - Timestamps for creation and updates
 
 **onboarding**
+
 - Tracks user onboarding progress
 - Links user to organization
 - Step-based progress (1-3)
@@ -151,9 +159,11 @@ leadnova/
 ## Meta Integration
 
 ### Overview
+
 LeadNova integrates with Meta Graph API v23.0 to capture and manage Facebook leads in real-time. The integration supports OAuth authentication, webhook subscriptions, and historical lead synchronization.
 
 ### Key Features
+
 - **OAuth 2.0 Authentication** - Secure token exchange with Meta
 - **Multi-Page Management** - Support for multiple Facebook pages
 - **Real-time Webhooks** - Instant lead capture via Meta webhooks
@@ -163,6 +173,7 @@ LeadNova integrates with Meta Graph API v23.0 to capture and manage Facebook lea
 - **Lead Field Mapping** - Flexible field mapping from Facebook forms
 
 ### API Configuration
+
 - **API Version**: v23.0
 - **Scopes**: `pages_show_list`, `pages_read_engagement`, `leads_retrieval`, `pages_manage_metadata`, `pages_manage_ads`
 - **Webhook Fields**: `leadgen`
@@ -171,9 +182,11 @@ LeadNova integrates with Meta Graph API v23.0 to capture and manage Facebook lea
 ## Onboarding Flow
 
 ### Overview
+
 The application features a comprehensive multi-step onboarding flow that guides new users through initial setup.
 
 ### Steps
+
 1. **Create Organization** (`/onboarding/create-organization`)
    - User creates or updates their organization
    - Sets organization name and optional image
@@ -196,6 +209,7 @@ The application features a comprehensive multi-step onboarding flow that guides 
    - Marks onboarding as complete
 
 ### Implementation Pattern
+
 ```tsx
 // Redirect logic in OnboardingRedirect component
 const route = getOnboardingRoute(
@@ -214,6 +228,7 @@ export const ONBOARDING_STEPS = {
 ```
 
 ### Key Components
+
 - `OnboardingRedirect` - Handles step-based routing
 - `OnboardingCard` - Consistent UI wrapper for onboarding screens
 - `OnboardingProgress` - Visual progress indicator
@@ -223,6 +238,7 @@ export const ONBOARDING_STEPS = {
 ## Development Patterns
 
 ### Custom Hook Pattern
+
 All Convex interactions must go through custom hooks:
 
 ```tsx
@@ -237,6 +253,7 @@ export function useCreateOrganization() {
 ```
 
 ### Component Structure
+
 ```tsx
 // Server Component (page.tsx)
 export default function Page() {
@@ -244,7 +261,7 @@ export default function Page() {
 }
 
 // Client Component
-"use client";
+("use client");
 import { useCustomHook } from "@/hooks/useCustomHook";
 
 export default function ClientComponent() {
@@ -254,7 +271,9 @@ export default function ClientComponent() {
 ```
 
 ### Utility Libraries
+
 Place shared utilities in `/lib` folder:
+
 ```tsx
 // lib/onboarding.ts
 export function getOnboardingRoute(
@@ -269,29 +288,35 @@ export function getOnboardingRoute(
 ## Convex Development Rules
 
 ### Core Principles
+
 - **ALWAYS read `/home/honey/code/leadnova/convex_rules.md` before writing any Convex function**
 - Follow strict guidelines in `convex_rules.md`
 - Use context7 MCP server for latest Convex documentation
 
 ### Query Guidelines
+
 - **NEVER use filters in queries** - always use indexes
 - Define indexes in schema and use `withIndex` in queries
 - Example:
   ```tsx
   const users = await ctx.db
     .query("users")
-    .withIndex("byOrganization", (q) => 
-      q.eq("organizationId", orgId)
-    )
+    .withIndex("byOrganization", (q) => q.eq("organizationId", orgId))
     .collect();
   ```
 
 ### Function Syntax
+
 - Use new function syntax with explicit validators:
   ```tsx
   export const getUser = query({
     args: { userId: v.id("users") },
-    returns: v.union(v.object({ /* user fields */ }), v.null()),
+    returns: v.union(
+      v.object({
+        /* user fields */
+      }),
+      v.null()
+    ),
     handler: async (ctx, args) => {
       return await ctx.db.get(args.userId);
     },
@@ -299,6 +324,7 @@ export function getOnboardingRoute(
   ```
 
 ### Validators
+
 - Always include argument validators
 - Always include return validators
 - Use `v.null()` for functions returning null
@@ -313,6 +339,7 @@ export function getOnboardingRoute(
 5. **Dashboard Access** - Full access after onboarding completion
 
 ### Auth Helpers
+
 ```tsx
 // convex/helpers/auth.ts
 export async function getAuthUserId(ctx) {
@@ -323,6 +350,7 @@ export async function getAuthUserId(ctx) {
 ## Styling Guidelines
 
 ### Theme Configuration
+
 - Import colors from `/home/honey/code/leadnova/style/hero.ts`
 - HeroUI theme with custom Meyoo theme
 - Color palette:
@@ -334,6 +362,7 @@ export async function getAuthUserId(ctx) {
 - Light/dark mode support with Zinc base colors
 
 ### Component Styling
+
 - Use Tailwind CSS classes
 - Leverage HeroUI component variants
 - Maintain consistent spacing and typography
@@ -342,18 +371,21 @@ export async function getAuthUserId(ctx) {
 ## Component Guidelines
 
 ### Naming Conventions
+
 - **Components:** PascalCase (e.g., `UserProfile.tsx`)
 - **Hooks:** camelCase with 'use' prefix (e.g., `useDebounce.ts`)
 - **Utilities:** camelCase (e.g., `formatDate.ts`)
 - **Convex functions:** camelCase (e.g., `createUser`, `listMessages`)
 
 ### Component Organization
+
 - Place feature-specific components in feature folders
 - Share reusable components in `/components/shared`
 - Keep micro components small and focused
 - Extract complex logic into custom hooks
 
 ### Form Handling
+
 - Use controlled components with React state
 - Validate on client before Convex mutations
 - Show loading states during async operations
@@ -362,6 +394,7 @@ export async function getAuthUserId(ctx) {
 ## Path Aliases
 
 Configure TypeScript and build tools to use:
+
 - `@/*` - Project root
 - `@configs/*` - Config files directory
 - `@/components/*` - Components directory
@@ -371,12 +404,14 @@ Configure TypeScript and build tools to use:
 ## Error Handling
 
 ### Client-Side
+
 - Wrap Convex calls in try-catch blocks
 - Show user-friendly error messages
 - Log errors for debugging
 - Provide fallback UI for error states
 
 ### Server-Side (Convex)
+
 - Validate inputs early
 - Throw descriptive errors
 - Use proper HTTP status codes
@@ -385,11 +420,13 @@ Configure TypeScript and build tools to use:
 ## Testing Strategy
 
 ### Unit Tests
+
 - Test utility functions in `/lib`
 - Test custom hooks with React Testing Library
 - Mock Convex queries/mutations
 
 ### Integration Tests
+
 - Test complete user flows
 - Verify onboarding process
 - Test authentication flows
@@ -398,12 +435,14 @@ Configure TypeScript and build tools to use:
 ## Performance Optimization
 
 ### Next.js Optimizations
+
 - Use Turbopack for faster builds
 - Implement proper code splitting
 - Optimize images with Next.js Image component
 - Use dynamic imports for heavy components
 
 ### Convex Optimizations
+
 - Design efficient indexes
 - Minimize query complexity
 - Use pagination for large datasets
@@ -412,12 +451,14 @@ Configure TypeScript and build tools to use:
 ## Security Best Practices
 
 ### Authentication
+
 - Always verify user authentication in Convex functions
 - Use role-based access control
 - Validate user permissions before operations
 - Secure sensitive operations with additional checks
 
 ### Data Protection
+
 - Never expose sensitive data in client components
 - Sanitize user inputs
 - Use environment variables for secrets
@@ -426,7 +467,9 @@ Configure TypeScript and build tools to use:
 ## Deployment
 
 ### Environment Variables
+
 Required environment variables:
+
 - `CONVEX_DEPLOYMENT` - Convex deployment URL
 - `NEXT_PUBLIC_CONVEX_URL` - Public Convex URL
 - `AUTH_SECRET` - Authentication secret
@@ -435,6 +478,7 @@ Required environment variables:
 - `RESEND_API_KEY` - Resend API key
 
 ### Production Checklist
+
 - [ ] Run `bun run typecheck` - Ensure no TypeScript errors
 - [ ] Run `bun run lint` - Fix all linting issues
 - [ ] Test all critical user flows

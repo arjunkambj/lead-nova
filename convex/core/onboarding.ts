@@ -6,7 +6,7 @@ import { Doc, Id } from "../_generated/dataModel";
 async function updateExistingOrganization(
   ctx: MutationCtx,
   user: Doc<"users">,
-  args: { name: string; image?: string }
+  args: { name: string; mobileNumber?: string; operatingCity?: string }
 ) {
   const organizationId = user.organizationId!;
   const organization = await ctx.db.get(organizationId);
@@ -25,7 +25,8 @@ async function updateExistingOrganization(
   // Update the organization
   await ctx.db.patch(organizationId, {
     name: args.name,
-    image: args.image,
+    mobileNumber: args.mobileNumber,
+    operatingCity: args.operatingCity,
     updatedAt: now,
   });
 
@@ -67,7 +68,8 @@ async function updateExistingOrganization(
 export const createOrganization = mutation({
   args: {
     name: v.string(),
-    image: v.optional(v.string()),
+    mobileNumber: v.optional(v.string()),
+    operatingCity: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -111,7 +113,8 @@ export const createOrganization = mutation({
     const organizationId = await ctx.db.insert("organizations", {
       ownerId: userId,
       name: args.name,
-      image: args.image,
+      mobileNumber: args.mobileNumber,
+      operatingCity: args.operatingCity,
       members: [userId],
       createdAt: now,
       updatedAt: now,
@@ -166,7 +169,8 @@ export const createOrganization = mutation({
 export const updateOrganization = mutation({
   args: {
     name: v.string(),
-    image: v.optional(v.string()),
+    mobileNumber: v.optional(v.string()),
+    operatingCity: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -196,7 +200,8 @@ export const updateOrganization = mutation({
     // Update the organization
     await ctx.db.patch(user.organizationId, {
       name: args.name,
-      image: args.image,
+      mobileNumber: args.mobileNumber,
+      operatingCity: args.operatingCity,
       updatedAt: now,
     });
 
@@ -305,7 +310,8 @@ export const getOnboardingStatus = query({
       completedAt: v.optional(v.number()),
       organization: v.object({
         name: v.string(),
-        image: v.optional(v.string()),
+        mobileNumber: v.optional(v.string()),
+        operatingCity: v.optional(v.string()),
       }),
     })
   ),
@@ -339,7 +345,8 @@ export const getOnboardingStatus = query({
       completedAt: onboarding.completedAt,
       organization: {
         name: organization.name,
-        image: organization.image,
+        mobileNumber: organization.mobileNumber,
+        operatingCity: organization.operatingCity,
       },
     };
   },
@@ -483,9 +490,25 @@ export const resetOnboarding = mutation({
 
     const now = Date.now();
     
+    // Disconnect Meta integration if exists
+    const metaIntegration = await ctx.db
+      .query("metaIntegrations")
+      .withIndex("byOrganizationAndActive", (q) =>
+        q.eq("organizationId", user.organizationId!).eq("isActive", true)
+      )
+      .first();
+    
+    if (metaIntegration) {
+      await ctx.db.patch(metaIntegration._id, {
+        isActive: false,
+        updatedAt: now,
+      });
+    }
+    
     // Reset onboarding record
     await ctx.db.patch(onboarding._id, {
       onboardingStep: 1,
+      isMetaConnected: false,
       isCompleted: false,
       completedAt: undefined,
       updatedAt: now,

@@ -30,7 +30,7 @@ export function useOverview() {
         // Small delay to show toast
         setTimeout(() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push("/onboarding" as any);
+          router.push("/onboarding/create-organization" as any);
         }, 500);
       }
     } catch (error) {

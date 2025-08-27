@@ -66,7 +66,8 @@ export const organizations = defineTable({
 
   /// Organization Details
   name: v.string(),
-  image: v.optional(v.string()),
+  mobileNumber: v.optional(v.string()),
+  operatingCity: v.optional(v.string()),
 
   ///// Members of the organization
   members: v.array(v.id("users")),
