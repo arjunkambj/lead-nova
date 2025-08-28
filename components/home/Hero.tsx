@@ -25,9 +25,9 @@ export default function Hero() {
 
       <div className="mx-auto max-w-6xl text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
           className="inline-flex items-center gap-2 rounded-full bg-content1 px-4 py-1.5 ring-1 ring-divider"
         >
           <HeroAvatarGroup />
@@ -39,30 +39,31 @@ export default function Hero() {
         <Spacer y={4} />
 
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.45, delay: 0.05 }}
           className="font-extrabold tracking-tight text-4xl sm:text-5xl md:text-[56px] xl:text-[64px] leading-[1.08] bg-gradient-to-r from-default-900 to-default-700 bg-clip-text text-transparent"
         >
-          Capture Facebook Leads
+          Capture. Assign. Convert.
           <br className="hidden sm:block" />
-          in Real-Time
+          All in One CRM.
         </motion.h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.45, delay: 0.1 }}
           className="mt-3 text-[15px] sm:text-base md:text-[18px] text-default-600 max-w-2xl mx-auto"
         >
-          The ultimate CRM for Facebook lead management. Instantly capture leads from Meta platforms,
-          manage your team, and scale your business with real-time synchronization.
+          Lead Nova helps you instantly capture leads from Meta Ads and other
+          sources, assign them to your team, and track every step until
+          conversion—all in real time.
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          transition={{ duration: 0.45, delay: 0.15 }}
           className="mt-6 flex  items-center justify-center gap-3"
         >
           <Button
@@ -72,7 +73,7 @@ export default function Hero() {
             size="lg"
             endContent={<Icon icon="lucide:chevron-right" width={20} />}
           >
-            Start Building
+            Start Free
           </Button>
           <Button
             as={Link}
@@ -82,14 +83,14 @@ export default function Hero() {
             size="lg"
             className="px-8"
           >
-            View Features
+            See How It Works
           </Button>
         </motion.div>
 
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
           className="mt-3 text-xs sm:text-sm text-default-500"
         >
           14-Day Money-Back Guarantee
@@ -97,9 +98,9 @@ export default function Hero() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
+        transition={{ duration: 0.5, delay: 0.25 }}
         className="mt-10 md:mt-10"
       >
         <HeroAppBox />

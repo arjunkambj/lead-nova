@@ -53,7 +53,7 @@ export default function Navbar() {
                   ? link.href.slice(1)
                   : undefined,
               }}
-              className="text-sm text-default-600 transition-colors hover:text-primary-600"
+              className="text-sm text-default-600 hover:text-primary-600"
             >
               {link.label}
             </Link>

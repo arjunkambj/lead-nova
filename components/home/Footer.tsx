@@ -41,7 +41,7 @@ export default function Footer() {
                 <Link
                   key={item.name}
                   isExternal
-                  className="text-default-700 hover:text-primary transition-colors"
+                  className="text-default-700 hover:text-primary"
                   href={item.href}
                 >
                   <span className="sr-only">{item.name}</span>
@@ -61,7 +61,7 @@ export default function Footer() {
                 {section.links.map((item) => (
                   <li key={item.name}>
                     <Link
-                      className="text-sm leading-6 text-default-600 hover:text-primary transition-colors"
+                      className="text-sm leading-6 text-default-600 hover:text-primary"
                       href={item.href}
                       size="sm"
                     >

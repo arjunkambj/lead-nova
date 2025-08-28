@@ -65,13 +65,13 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: BillingCycle }) {
   return (
     <Card
       shadow="none"
-      className={`rounded-2xl border ${
+      className={`h-full rounded-2xl border ${
         plan.highlight
           ? "border-primary-200 bg-primary-50"
           : "border-divider bg-content1"
       }`}
     >
-      <CardBody className="p-6 md:p-8">
+      <CardBody className="flex h-full flex-col p-6 md:p-8">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-base font-semibold text-default-900">
@@ -93,7 +93,7 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: BillingCycle }) {
           </p>
         </div>
 
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 space-y-2 flex-1">
           {plan.features.map((f) => (
             <FeatureRow
               key={f.label}
