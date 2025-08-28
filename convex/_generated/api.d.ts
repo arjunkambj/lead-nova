@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as core_dashboard from "../core/dashboard.js";
+import type * as core_leads from "../core/leads.js";
 import type * as core_onboarding from "../core/onboarding.js";
 import type * as core_organizations from "../core/organizations.js";
 import type * as core_users from "../core/users.js";
@@ -40,6 +41,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   "core/dashboard": typeof core_dashboard;
+  "core/leads": typeof core_leads;
   "core/onboarding": typeof core_onboarding;
   "core/organizations": typeof core_organizations;
   "core/users": typeof core_users;

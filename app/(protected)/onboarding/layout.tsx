@@ -1,7 +1,6 @@
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import Logo from "@/components/shared/Logo";
 import { ThemeSwitch } from "@/components/shared/ThemeSwitch";
-import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
-import AuthRedirect from "@/components/shared/AuthRedirect";
 
 export default function OnboardingLayout({
   children,
@@ -9,28 +8,21 @@ export default function OnboardingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      {/* Check if user is NOT onboarded, redirect to /overview if already onboarded */}
-      <AuthRedirect requireOnboarded={false} />
-      
-      <section className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="flex justify-between items-center px-8 py-6">
-          <Logo className="text-foreground" />
-          <ThemeSwitch />
-        </div>
+    <section className="h-dvh w-full flex">
+      <div className="absolute top-5 left-4">
+        <Logo className="text-foreground" />
+      </div>
+      <ThemeSwitch />
 
-        {/* Main Content */}
-        <div className="max-w-2xl mx-auto px-8 py-12">
-          {/* Progress Indicator */}
+      <div className="h-full w-3/5 flex">
+        {/* Left: Progress + Content */}
+        <div className="flex flex-col items-start justify-center gap-12 p-12 h-full w-full max-w-2xl mx-auto">
           <OnboardingProgress />
-          
-          {/* Form Content */}
-          <div className="mt-16">
-            {children}
-          </div>
+          <div className="w-full max-w-md">{children}</div>
         </div>
-      </section>
-    </>
+      </div>
+      {/* Right: 2/5 panel */}
+      <div className="h-full w-2/5 border-l border-default-200/50 bg-gradient-to-br from-default-50 via-default-50 to-default-100" />
+    </section>
   );
 }

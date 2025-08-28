@@ -1,5 +1,11 @@
 import { Doc, Id } from "../_generated/dataModel";
-import { MutationCtx } from "../_generated/server";
+import { MutationCtx, QueryCtx } from "../_generated/server";
+import { auth } from "../auth";
+
+export async function getAuthUserId(ctx: QueryCtx | MutationCtx): Promise<Id<"users"> | null> {
+  const session = await auth.getUserId(ctx);
+  return session as Id<"users"> | null;
+}
 
 export function normalizeEmail(email: string): string {
   return email.toLowerCase().trim();

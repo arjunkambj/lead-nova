@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <ConvexAuthNextjsServerProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={`${dmSans.className} antialiased min-h-dvh`}>
+        <body className={`${dmSans.className} antialiased min-h-dvh w-full`}>
           <Providers>{children}</Providers>
         </body>
       </html>

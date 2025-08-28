@@ -8,7 +8,11 @@ import MetaConnectButton from "./subcomponents/meta/MetaConnectButton";
 import MetaDisconnectAction from "./subcomponents/meta/MetaDisconnectAction";
 import MetaSyncStatus from "./subcomponents/meta/MetaSyncStatus";
 import MetaCallbackHandler from "./subcomponents/meta/MetaCallbackHandler";
-import { useOnboardingStatus, useUpdateOnboardingStep, useSkipOnboardingStep } from "@/hooks/useOnboarding";
+import {
+  useOnboardingStatus,
+  useUpdateOnboardingStep,
+  useSkipOnboardingStep,
+} from "@/hooks/useOnboarding";
 import { useMetaConnectionStatus } from "@/hooks/useMeta";
 
 export default function MetaConnectView() {
@@ -21,7 +25,11 @@ export default function MetaConnectView() {
   const isMetaConnected = onboardingStatus?.isMetaConnected || false;
 
   const handleContinue = async () => {
-    if (onboardingStatus && onboardingStatus.onboardingStep && onboardingStatus.onboardingStep < 3) {
+    if (
+      onboardingStatus &&
+      onboardingStatus.onboardingStep &&
+      onboardingStatus.onboardingStep < 3
+    ) {
       try {
         await updateOnboardingStep({ step: 3 });
       } catch (error) {
@@ -46,14 +54,14 @@ export default function MetaConnectView() {
   return (
     <>
       <MetaCallbackHandler />
-      
+
       <div>
         <h1 className="text-2xl font-semibold mb-2">
           {isMetaConnected ? "Meta Account Connected" : "Connect Facebook"}
         </h1>
         <p className="text-default-500 text-sm mb-8">
-          {isMetaConnected 
-            ? "Your Facebook page is linked" 
+          {isMetaConnected
+            ? "Your Facebook page is linked"
             : "Start receiving leads from Facebook"}
         </p>
 
@@ -62,7 +70,9 @@ export default function MetaConnectView() {
             {/* Connected Page Info */}
             <div className="flex items-center gap-4 p-4 bg-content2 rounded-lg">
               <Avatar
-                icon={<Icon icon="solar:facebook-bold" width={20} height={20} />}
+                icon={
+                  <Icon icon="solar:facebook-bold" width={20} height={20} />
+                }
                 className="bg-primary"
               />
               <div className="flex-1">
@@ -88,14 +98,20 @@ export default function MetaConnectView() {
               </div>
               <div>
                 <p className="text-sm text-default-500">Lead Count</p>
-                <p className="text-sm font-medium">{connectionStatus.leadCount || 0}</p>
+                <p className="text-sm font-medium">
+                  {connectionStatus.leadCount || 0}
+                </p>
               </div>
             </div>
 
             {/* Actions */}
             <div className="flex gap-4">
               <MetaDisconnectAction />
-              <Button color="primary" onPress={handleContinue} className="flex-1">
+              <Button
+                color="primary"
+                onPress={handleContinue}
+                className="flex-1"
+              >
                 Continue
               </Button>
             </div>
@@ -103,9 +119,14 @@ export default function MetaConnectView() {
         ) : (
           <div className="space-y-6">
             <MetaConnectButton />
-            
-            <div className="text-center">
-              <Button variant="flat" size="sm" onPress={handleSkip}>
+
+            <div className="flex justify-end">
+              <Button
+                variant="bordered"
+                color="danger"
+                size="sm"
+                onPress={handleSkip}
+              >
                 Skip for now
               </Button>
             </div>
