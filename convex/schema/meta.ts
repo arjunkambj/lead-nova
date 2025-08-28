@@ -27,7 +27,8 @@ export const metaIntegrations = defineTable({
   .index("byOrganization", ["organizationId"])
   .index("byPageId", ["pageId"])
   .index("byActive", ["isActive"])
-  .index("byOrganizationAndActive", ["organizationId", "isActive"]);
+  .index("byOrganizationAndActive", ["organizationId", "isActive"])
+  .index("byActiveAndTokenExpiry", ["isActive", "tokenExpiresAt"]);
 
 // Facebook Leads Storage
 export const leads = defineTable({

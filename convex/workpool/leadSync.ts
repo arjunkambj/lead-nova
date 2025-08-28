@@ -20,7 +20,13 @@ export const syncHistoricalLeads = internalAction({
     failedLeads: v.number(),
     error: v.optional(v.string()),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{
+    success: boolean;
+    totalLeads: number;
+    processedLeads: number;
+    failedLeads: number;
+    error?: string;
+  }> => {
     let totalLeads = 0;
     let processedLeads = 0;
     let failedLeads = 0;
@@ -44,8 +50,25 @@ export const syncHistoricalLeads = internalAction({
         status: "syncing",
       });
 
+      // Get the integration details including selected forms
+      const integration: {
+        _id: any;
+        organizationId: any;
+        pageId: string;
+        pageAccessToken: string;
+        leadFormIds?: string[];
+        isActive: boolean;
+      } | null = await ctx.runQuery(
+        internal.integration.meta.getIntegrationById,
+        { integrationId: args.integrationId }
+      );
+
+      if (!integration) {
+        throw new Error("Integration not found");
+      }
+
       // Get all lead forms for the page
-      let forms: Array<{
+      let allForms: Array<{
         id: string;
         name: string;
         status: string;
@@ -53,7 +76,7 @@ export const syncHistoricalLeads = internalAction({
       }> = [];
       
       try {
-        forms = await metaAPI.getPageLeadForms(args.pageId);
+        allForms = await metaAPI.getPageLeadForms(args.pageId);
       } catch (error) {
         
         // Check if this is a permissions error
@@ -63,15 +86,14 @@ export const syncHistoricalLeads = internalAction({
         
         // For other errors, continue with empty forms array
       }
-
-      // Get the organization ID for this integration
-      const integration = await ctx.runQuery(
-        internal.integration.meta.getIntegrationById,
-        { integrationId: args.integrationId }
-      );
-
-      if (!integration) {
-        throw new Error("Integration not found");
+      
+      // Filter forms based on selection if specified
+      let forms = allForms;
+      if (integration.leadFormIds && integration.leadFormIds.length > 0) {
+        forms = allForms.filter(form => integration.leadFormIds!.includes(form.id));
+        console.log(`Filtering to ${forms.length} selected forms out of ${allForms.length} total forms`);
+      } else {
+        console.log(`Processing all ${forms.length} forms (no specific selection)`);
       }
       
       // If no forms found, update status and return early
@@ -88,11 +110,13 @@ export const syncHistoricalLeads = internalAction({
           totalLeads: 0,
           processedLeads: 0,
           failedLeads: 0,
-          error: "No lead forms found. Please create lead generation forms in Facebook Ads Manager."
+          error: integration.leadFormIds && integration.leadFormIds.length > 0 
+            ? "No selected forms found. Forms may have been deleted."
+            : "No lead forms found. Please create lead generation forms in Facebook Ads Manager."
         };
       }
 
-      // Process each form
+      // Process each selected form
       for (const form of forms) {
         if (form.status !== "ACTIVE" && form.status !== "ARCHIVED") {
           console.log(`Skipping form ${form.id} with status ${form.status}`);

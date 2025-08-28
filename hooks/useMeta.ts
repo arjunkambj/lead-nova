@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 export function useMetaConnectionStatus() {
@@ -13,4 +13,12 @@ export function useDisconnectMetaAccount() {
 
 export function useConnectMetaPage() {
   return useMutation(api.integration.meta.connectMetaAccount);
+}
+
+export function useGetPageForms() {
+  return useAction(api.integration.meta.getPageForms);
+}
+
+export function useTriggerSyncWithForms() {
+  return useMutation(api.integration.meta.triggerSyncWithForms);
 }

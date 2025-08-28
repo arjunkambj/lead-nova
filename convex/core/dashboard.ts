@@ -86,12 +86,12 @@ export const getBasicStats = query({
     });
 
     // Get Meta integration status
-    const metaIntegrations = await ctx.db
+    const activeIntegrations = await ctx.db
       .query("metaIntegrations")
-      .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganizationAndActive", (q) => 
+        q.eq("organizationId", user.organizationId!).eq("isActive", true)
+      )
       .collect();
-
-    const activeIntegrations = metaIntegrations.filter((integration) => integration.isActive);
 
     // Get latest sync job
     const latestSyncJob = await ctx.db
@@ -232,12 +232,33 @@ export const getSyncStatus = query({
     
     const currentJob = (!isProcessingJobStale ? processingJob : null) || pendingJob;
 
-    // Get recent completed jobs
-    const recentJobs = await ctx.db
-      .query("leadSyncJobs")
-      .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
-      .order("desc")
-      .take(5);
+    // Get recent completed jobs - fetch completed and failed jobs separately using indexes
+    const [completedJobs, failedJobs] = await Promise.all([
+      ctx.db
+        .query("leadSyncJobs")
+        .withIndex("byOrganizationAndStatus", (q) =>
+          q.eq("organizationId", user.organizationId!).eq("status", "completed")
+        )
+        .order("desc")
+        .take(3),
+      ctx.db
+        .query("leadSyncJobs")
+        .withIndex("byOrganizationAndStatus", (q) =>
+          q.eq("organizationId", user.organizationId!).eq("status", "failed")
+        )
+        .order("desc")
+        .take(3),
+    ]);
+
+    // Combine and sort completed and failed jobs
+    const recentJobs = [...completedJobs, ...failedJobs]
+      .sort((a, b) => {
+        // Sort by completedAt or updatedAt, most recent first
+        const aTime = a.completedAt || a.updatedAt || 0;
+        const bTime = b.completedAt || b.updatedAt || 0;
+        return bTime - aTime;
+      })
+      .slice(0, 3);
 
     // Count webhook events
     const webhookEvents = await ctx.db
@@ -259,23 +280,14 @@ export const getSyncStatus = query({
             error: currentJob.error,
           }
         : undefined,
-      recentJobs: recentJobs
-        .filter((job) => job.status === "completed" || job.status === "failed")
-        .sort((a, b) => {
-          // Sort by completedAt or updatedAt, most recent first
-          const aTime = a.completedAt || a.updatedAt || 0;
-          const bTime = b.completedAt || b.updatedAt || 0;
-          return bTime - aTime;
-        })
-        .slice(0, 3)
-        .map((job) => ({
-          _id: job._id,
-          status: job.status,
-          jobType: job.jobType,
-          totalLeads: job.totalLeads,
-          completedAt: job.completedAt,
-          pageId: job.pageId,
-        })),
+      recentJobs: recentJobs.map((job) => ({
+        _id: job._id,
+        status: job.status,
+        jobType: job.jobType,
+        totalLeads: job.totalLeads,
+        completedAt: job.completedAt,
+        pageId: job.pageId,
+      })),
       webhookEvents: webhookEvents.length,
     };
   },
@@ -468,11 +480,11 @@ export const getDashboardData = query({
     // Parallel fetching of all data
     const [
       leads,
-      metaIntegrations,
+      activeIntegrations,
       latestSyncJob,
       processingJob,
       pendingJob,
-      recentJobs,
+      recentJobsResult,
       webhookEvents
     ] = await Promise.all([
       // Get all leads for the organization
@@ -481,10 +493,12 @@ export const getDashboardData = query({
         .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
         .collect(),
       
-      // Get Meta integrations
+      // Get active Meta integrations
       ctx.db
         .query("metaIntegrations")
-        .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
+        .withIndex("byOrganizationAndActive", (q) => 
+          q.eq("organizationId", user.organizationId!).eq("isActive", true)
+        )
         .collect(),
       
       // Get latest sync job for last sync time
@@ -510,12 +524,23 @@ export const getDashboardData = query({
         )
         .first(),
       
-      // Get recent completed jobs
-      ctx.db
-        .query("leadSyncJobs")
-        .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
-        .order("desc")
-        .take(5),
+      // Get recent completed and failed jobs separately using indexes
+      Promise.all([
+        ctx.db
+          .query("leadSyncJobs")
+          .withIndex("byOrganizationAndStatus", (q) =>
+            q.eq("organizationId", user.organizationId!).eq("status", "completed")
+          )
+          .order("desc")
+          .take(3),
+        ctx.db
+          .query("leadSyncJobs")
+          .withIndex("byOrganizationAndStatus", (q) =>
+            q.eq("organizationId", user.organizationId!).eq("status", "failed")
+          )
+          .order("desc")
+          .take(3),
+      ]),
       
       // Count webhook events
       ctx.db
@@ -545,7 +570,15 @@ export const getDashboardData = query({
       }
     });
 
-    const activeIntegrations = metaIntegrations.filter((integration) => integration.isActive);
+    // Process recent jobs - combine completed and failed jobs, then sort
+    const [completedJobs, failedJobs] = recentJobsResult;
+    const recentJobs = [...completedJobs, ...failedJobs]
+      .sort((a, b) => {
+        const aTime = a.completedAt || a.updatedAt || 0;
+        const bTime = b.completedAt || b.updatedAt || 0;
+        return bTime - aTime;
+      })
+      .slice(0, 3);
 
     // Process sync status
     const isProcessingJobStale = processingJob && processingJob.startedAt 
@@ -615,22 +648,14 @@ export const getDashboardData = query({
               error: currentJob.error,
             }
           : undefined,
-        recentJobs: recentJobs
-          .filter((job) => job.status === "completed" || job.status === "failed")
-          .sort((a, b) => {
-            const aTime = a.completedAt || a.updatedAt || 0;
-            const bTime = b.completedAt || b.updatedAt || 0;
-            return bTime - aTime;
-          })
-          .slice(0, 3)
-          .map((job) => ({
-            _id: job._id,
-            status: job.status,
-            jobType: job.jobType,
-            totalLeads: job.totalLeads,
-            completedAt: job.completedAt,
-            pageId: job.pageId,
-          })),
+        recentJobs: recentJobs.map((job) => ({
+          _id: job._id,
+          status: job.status,
+          jobType: job.jobType,
+          totalLeads: job.totalLeads,
+          completedAt: job.completedAt,
+          pageId: job.pageId,
+        })),
         webhookEvents: webhookEvents.length,
       },
     };

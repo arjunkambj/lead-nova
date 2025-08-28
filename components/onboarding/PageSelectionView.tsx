@@ -88,26 +88,32 @@ export default function PageSelectionView() {
     setIsConnecting(true);
     
     try {
-      // Connect the selected page
+      // Connect the selected page WITHOUT triggering sync
       const result = await connectMetaPage({
         pageId: selectedPage.id,
         pageName: selectedPage.name,
         pageAccessToken: selectedPage.access_token,
         userAccessToken: tokens.userAccessToken,
         tokenExpiresAt: tokens.tokenExpiresAt,
+        triggerSync: false, // Don't trigger sync yet
       });
 
-      if (result.success) {
+      if (result.success && result.integrationId) {
         toast.success(`Successfully connected ${selectedPage.name}`);
         
-        // Trigger historical sync
-        if (result.integrationId) {
-          // The sync will be triggered automatically by the mutation
-          toast.info("Starting historical lead sync...");
-        }
+        // Prepare data for form selection
+        const pageData = {
+          pageId: selectedPage.id,
+          pageName: selectedPage.name,
+          pageAccessToken: selectedPage.access_token,
+          integrationId: result.integrationId,
+        };
         
-        // Redirect to next step
-        router.push("/onboarding/invite-team");
+        // Navigate to form selection
+        const formSelectionUrl = new URL(`${window.location.origin}/onboarding/select-forms`);
+        formSelectionUrl.searchParams.set("pageData", encodeURIComponent(JSON.stringify(pageData)));
+        
+        router.push(formSelectionUrl.pathname + formSelectionUrl.search);
       } else {
         throw new Error("Failed to connect page");
       }
