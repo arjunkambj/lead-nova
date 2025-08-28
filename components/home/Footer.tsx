@@ -32,8 +32,8 @@ export default function Footer() {
           {/* Logo and description */}
           <div className="md:col-span-2">
             <Logo />
-            <p className="mt-4 text-sm leading-6 text-default-600 max-w-sm">
-              LeadNova helps teams see where leads come from and what converts.
+            <p className="mt-4 text-sm text-default-600 max-w-sm">
+              Facebook lead management made simple.
             </p>
             {/* Social links */}
             <div className="mt-6 flex space-x-6">

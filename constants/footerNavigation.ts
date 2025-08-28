@@ -34,13 +34,13 @@ export const footerNavigation = {
   legal: [
     {
       name: "Privacy Policy",
-      href: "/privacy/policy",
+      href: "/privacy",
       icon: "solar:shield-check-linear",
       activeIcon: "solar:shield-check-bold",
     },
     {
       name: "Terms of Service",
-      href: "/privacy/terms",
+      href: "/terms",
       icon: "solar:document-text-linear",
       activeIcon: "solar:document-text-bold",
     },
@@ -49,12 +49,6 @@ export const footerNavigation = {
       href: "/cookies",
       icon: "solar:cookie-linear",
       activeIcon: "solar:cookie-bold",
-    },
-    {
-      name: "Data Protection",
-      href: "/data-protection",
-      icon: "solar:shield-linear",
-      activeIcon: "solar:shield-bold",
     },
     {
       name: "Data Deletion",

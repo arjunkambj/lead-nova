@@ -67,7 +67,7 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: BillingCycle }) {
       shadow="none"
       className={`h-full rounded-2xl border ${
         plan.highlight
-          ? "border-primary-200 bg-primary-50"
+          ? "border-primary-200 bg-primary-50/50 dark:bg-primary-900/10 dark:border-primary-700/50"
           : "border-divider bg-content1"
       }`}
     >
@@ -126,17 +126,14 @@ export default function Pricing() {
   return (
     <section
       id="pricing"
-      className="mx-auto w-full max-w-6xl px-4 py-24 md:px-6 lg:px-8 scroll-mt-28"
+      className="mx-auto w-full max-w-6xl px-4 py-20 md:py-24 md:px-6 lg:px-8"
     >
-      <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-3 text-center">
-        <span className="text-sm font-medium bg-content1 px-4 py-1 rounded-full  border border-divider text-default-500 tracking-wider uppercase">
-          Pricing
-        </span>
-        <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-default-900">
-          Simple, Transparent Pricing
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-default-900">
+          Simple Pricing
         </h2>
-        <p className="text-lg text-default-600 max-w-2xl">
-          Start free. Scale when you’re ready.
+        <p className="mt-3 text-default-600">
+          Start free. Scale as you grow.
         </p>
       </div>
 

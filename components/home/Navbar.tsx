@@ -77,7 +77,7 @@ export default function Navbar() {
           onClick={toggleMobileMenu}
         >
           <Icon
-            icon={mobileOpen ? "lucide:x" : "lucide:menu"}
+            icon={mobileOpen ? "solar:close-circle-linear" : "solar:hamburger-menu-linear"}
             width={24}
             height={24}
           />
