@@ -331,7 +331,7 @@ export class MetaGraphAPI {
   ): Promise<{ leads: MetaLead[]; nextCursor?: string }> {
     const params: Record<string, string | number> = {
       fields:
-        "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data",
+        "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data,custom_disclaimer_responses,retailer_item_id",
       limit,
     };
     
@@ -358,7 +358,7 @@ export class MetaGraphAPI {
     const response = await this.client.get<MetaLead>(`/${leadId}`, {
       params: {
         fields:
-          "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data",
+          "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data,custom_disclaimer_responses,retailer_item_id",
       },
     });
     return response.data;
@@ -391,7 +391,7 @@ export class MetaGraphAPI {
       while (hasMore) {
         const params: Record<string, string | number> = {
           fields:
-            "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data",
+            "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data,custom_disclaimer_responses,retailer_item_id",
           limit: META_CONFIG.LEAD_BATCH_SIZE,
           filtering: JSON.stringify([
             {

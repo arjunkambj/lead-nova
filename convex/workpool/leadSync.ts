@@ -185,7 +185,9 @@ export const syncHistoricalLeads = internalAction({
                   formId: lead.form_id || form.id,
                   formName: lead.form_name || form.name,
                   adId: lead.ad_id,
+                  adName: lead.ad_name,
                   adsetId: lead.adset_id,
+                  adsetName: lead.adset_name,
                   campaignId: lead.campaign_id,
                   campaignName: lead.campaign_name,
                   fieldData,
@@ -194,6 +196,8 @@ export const syncHistoricalLeads = internalAction({
                     : Date.now(),
                   platform: lead.platform || "fb",
                   isOrganic: lead.is_organic ?? !lead.ad_id,
+                  customDisclaimer: lead.custom_disclaimer_responses ? JSON.stringify(lead.custom_disclaimer_responses) : undefined,
+                  retailerItemId: lead.retailer_item_id,
                 };
 
                 // Store the lead

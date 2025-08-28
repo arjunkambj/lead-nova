@@ -38,7 +38,9 @@ export const leads = defineTable({
   formId: v.string(),
   formName: v.optional(v.string()),
   adId: v.optional(v.string()),
+  adName: v.optional(v.string()),
   adsetId: v.optional(v.string()),
+  adsetName: v.optional(v.string()),
   campaignId: v.optional(v.string()),
   campaignName: v.optional(v.string()),
   fieldData: v.array(
@@ -58,6 +60,34 @@ export const leads = defineTable({
   state: v.optional(v.string()),
   country: v.optional(v.string()),
   zipCode: v.optional(v.string()),
+  
+  // Work-related fields
+  jobTitle: v.optional(v.string()),
+  workEmail: v.optional(v.string()),
+  workPhone: v.optional(v.string()),
+  
+  // Demographic fields
+  dateOfBirth: v.optional(v.string()),
+  gender: v.optional(v.string()),
+  maritalStatus: v.optional(v.string()),
+  militaryStatus: v.optional(v.string()),
+  
+  // Extended location fields  
+  streetAddress: v.optional(v.string()),
+  addressLine2: v.optional(v.string()),
+  postBox: v.optional(v.string()),
+  
+  // National ID fields (for specific countries)
+  nationalIdNumber: v.optional(v.string()),
+  nationalIdType: v.optional(v.string()),
+  
+  // Retailer/Dealer fields
+  retailerItemId: v.optional(v.string()),
+  selectedDealer: v.optional(v.string()),
+  
+  // Custom fields
+  customDisclaimer: v.optional(v.string()), // JSON string for disclaimer responses
+  customQuestions: v.optional(v.string()), // JSON string for custom question responses
   
   createdTime: v.number(), // Meta creation timestamp
   platform: v.optional(v.string()), // fb, ig, etc.

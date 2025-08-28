@@ -473,7 +473,9 @@ export const storeLead = internalMutation({
       formId: v.string(),
       formName: v.optional(v.string()),
       adId: v.optional(v.string()),
+      adName: v.optional(v.string()),
       adsetId: v.optional(v.string()),
+      adsetName: v.optional(v.string()),
       campaignId: v.optional(v.string()),
       campaignName: v.optional(v.string()),
       fieldData: v.array(
@@ -485,6 +487,8 @@ export const storeLead = internalMutation({
       createdTime: v.number(),
       platform: v.optional(v.string()),
       isOrganic: v.boolean(),
+      customDisclaimer: v.optional(v.string()),
+      retailerItemId: v.optional(v.string()),
     }),
   },
   returns: v.id("leads"),
@@ -511,7 +515,9 @@ export const storeLead = internalMutation({
       formId: args.lead.formId,
       formName: args.lead.formName,
       adId: args.lead.adId,
+      adName: args.lead.adName,
       adsetId: args.lead.adsetId,
+      adsetName: args.lead.adsetName,
       campaignId: args.lead.campaignId,
       campaignName: args.lead.campaignName,
       fieldData: args.lead.fieldData,
@@ -519,6 +525,8 @@ export const storeLead = internalMutation({
       createdTime: args.lead.createdTime,
       platform: args.lead.platform,
       isOrganic: args.lead.isOrganic,
+      customDisclaimer: args.lead.customDisclaimer,
+      retailerItemId: args.lead.retailerItemId,
       syncedAt: now,
       status: "new",
       createdAt: now,
@@ -753,6 +761,19 @@ interface ParsedLeadFields {
   state?: string;
   country?: string;
   zipCode?: string;
+  jobTitle?: string;
+  workEmail?: string;
+  workPhone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  maritalStatus?: string;
+  militaryStatus?: string;
+  streetAddress?: string;
+  addressLine2?: string;
+  postBox?: string;
+  nationalIdNumber?: string;
+  nationalIdType?: string;
+  selectedDealer?: string;
 }
 
 function parseLeadFields(fieldData: Array<{ name: string; value: string }>): ParsedLeadFields {
@@ -775,6 +796,7 @@ function parseLeadFields(fieldData: Array<{ name: string; value: string }>): Par
         break;
       case "phone":
       case "phone_number":
+      case "mobile_number":
         fields.phone = field.value;
         break;
       case "company":
@@ -795,6 +817,69 @@ function parseLeadFields(fieldData: Array<{ name: string; value: string }>): Par
       case "zip_code":
       case "postal_code":
         fields.zipCode = field.value;
+        break;
+      case "job_title":
+      case "job title":
+      case "position":
+        fields.jobTitle = field.value;
+        break;
+      case "work_email":
+      case "work email":
+      case "business_email":
+        fields.workEmail = field.value;
+        break;
+      case "work_phone":
+      case "work phone":
+      case "business_phone":
+        fields.workPhone = field.value;
+        break;
+      case "date_of_birth":
+      case "dob":
+      case "birthday":
+        fields.dateOfBirth = field.value;
+        break;
+      case "gender":
+        fields.gender = field.value;
+        break;
+      case "marital_status":
+      case "relationship_status":
+        fields.maritalStatus = field.value;
+        break;
+      case "military_status":
+        fields.militaryStatus = field.value;
+        break;
+      case "street_address":
+      case "street":
+      case "address":
+        fields.streetAddress = field.value;
+        break;
+      case "address_line_2":
+      case "address2":
+      case "apt":
+      case "apartment":
+      case "suite":
+        fields.addressLine2 = field.value;
+        break;
+      case "post_box":
+      case "po_box":
+      case "p.o. box":
+        fields.postBox = field.value;
+        break;
+      case "cpf": // Brazil
+      case "dni": // Argentina, Peru
+      case "rut": // Chile
+      case "cc": // Colombia
+      case "ci": // Ecuador
+      case "rfc": // Mexico
+      case "national_id":
+      case "national_id_number":
+        fields.nationalIdNumber = field.value;
+        fields.nationalIdType = field.name.toUpperCase();
+        break;
+      case "selected_dealer":
+      case "preferred_dealer":
+      case "store_location":
+        fields.selectedDealer = field.value;
         break;
     }
   }

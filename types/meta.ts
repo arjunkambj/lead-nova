@@ -50,6 +50,7 @@ export interface MetaLead {
     checkbox_key: string;
     is_checked: boolean;
   }>;
+  retailer_item_id?: string;
   retailer_item_ids?: string[];
 }
 
