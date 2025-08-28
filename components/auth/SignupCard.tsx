@@ -131,7 +131,8 @@ export default function SignupCard() {
                 fullWidth
                 type="submit"
                 color="primary"
-                startContent={<Icon className="pointer-events-none text-2xl" icon="solar:letter-bold" />}
+                size="lg"
+                startContent={<Icon className="pointer-events-none text-xl" icon="solar:letter-bold" />}
               >
                 Continue with Email
               </Button>
@@ -147,10 +148,10 @@ export default function SignupCard() {
                 value={name}
                 variant="bordered"
                 label="Full Name"
-                startContent={<Icon className="text-default-400" icon="solar:user-linear" width={20} />}
+                startContent={<Icon className="text-default-400" icon="solar:user-linear" width={18} />}
                 onValueChange={handleNameChange}
               />
-              <Button fullWidth color="primary" type="submit">
+              <Button fullWidth color="primary" size="lg" type="submit">
                 Continue
               </Button>
             </>
@@ -160,6 +161,7 @@ export default function SignupCard() {
               <Button
                 fullWidth
                 color="primary"
+                size="lg"
                 type="submit"
               >
                 Verify & Create Account
@@ -168,7 +170,11 @@ export default function SignupCard() {
           )}
         </m.form>
       </AnimatePresence>
-      {page === 0 && <AuthLinks mode="signup" />}
+      {page === 0 && (
+        <div className="mt-6">
+          <AuthLinks mode="signup" />
+        </div>
+      )}
     </AuthCard>
   );
 }

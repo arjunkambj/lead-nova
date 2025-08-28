@@ -25,10 +25,10 @@ const OAuthButtons = React.memo(function OAuthButtons({}: OAuthButtonsProps) {
     }
   }, [handleGoogleSignIn]);
 
-  const handleGithubSignIn = useCallback(async () => {
+  const handleAppleSignIn = useCallback(async () => {
     addToast({
       title: "Coming Soon",
-      description: "GitHub authentication will be available soon",
+      description: "Apple authentication will be available soon",
       color: "warning",
       timeout: 2000,
     });
@@ -40,7 +40,7 @@ const OAuthButtons = React.memo(function OAuthButtons({}: OAuthButtonsProps) {
         startContent={<Icon icon="flat-color-icons:google" width={24} />}
         variant="flat"
         fullWidth
-        className="bg-content2 hover:bg-content3"
+        size="lg"
         onPress={onGoogleSignIn}
         isLoading={isGoogleLoading}
       >
@@ -48,14 +48,14 @@ const OAuthButtons = React.memo(function OAuthButtons({}: OAuthButtonsProps) {
       </Button>
       <Button
         startContent={
-          <Icon className="text-default-500" icon="fe:github" width={24} />
+          <Icon className="text-default-600" icon="fa6-brands:apple" width={20} />
         }
         variant="flat"
         fullWidth
-        className="bg-content2 hover:bg-content3"
-        onPress={handleGithubSignIn}
+        size="lg"
+        onPress={handleAppleSignIn}
       >
-        Continue with Github
+        Continue with Apple
       </Button>
     </div>
   );

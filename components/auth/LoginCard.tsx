@@ -110,9 +110,10 @@ export default function LoginCard() {
                 fullWidth
                 type="submit"
                 color="primary"
+                size="lg"
                 startContent={
                   <Icon
-                    className="pointer-events-none text-2xl"
+                    className="pointer-events-none text-xl"
                     icon="solar:letter-bold"
                   />
                 }
@@ -128,14 +129,18 @@ export default function LoginCard() {
                 isInvalid={!isOtpValid}
                 email={email}
               />
-              <Button fullWidth color="primary" type="submit">
+              <Button fullWidth color="primary" size="lg" type="submit">
                 Verify
               </Button>
             </>
           )}
         </m.form>
       </AnimatePresence>
-      {page === 0 && <AuthLinks mode="login" />}
+      {page === 0 && (
+        <div className="mt-6">
+          <AuthLinks mode="login" />
+        </div>
+      )}
     </AuthCard>
   );
 }

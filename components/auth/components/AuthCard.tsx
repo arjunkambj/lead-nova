@@ -20,11 +20,11 @@ const AuthCard = React.memo(function AuthCard({
 }: AuthCardProps) {
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <div className="rounded-2xl border border-divider bg-content1 flex w-full max-w-[420px] flex-col gap-6 px-6 py-8">
+      <div className="flex w-full max-w-[420px] flex-col gap-8">
         <LazyMotion features={domAnimation}>
-          <m.div layout className="flex flex-col items-center pb-2">
+          <m.div layout className="flex flex-col">
             {showBack && (
-              <m.div className="w-full mb-2">
+              <m.div className="mb-4">
                 <Button isIconOnly size="sm" variant="flat" onPress={onBack}>
                   <Icon
                     className="text-default-500"
@@ -36,15 +36,18 @@ const AuthCard = React.memo(function AuthCard({
             )}
             <m.h1
               layout
-              className="text-3xl font-semibold tracking-tight text-center"
+              className="text-3xl font-semibold tracking-tight"
               transition={{ duration: 0.25 }}
             >
-              <span className="bg-gradient-to-r from-default-900 to-default-700 bg-clip-text text-transparent">
-                {title}
-              </span>
+              {title}
             </m.h1>
+            <p className="text-default-500 mt-2">
+              {showBack ? "Enter the code we sent you" : "Sign in to your account"}
+            </p>
           </m.div>
-          {children}
+          <div className="mt-6">
+            {children}
+          </div>
         </LazyMotion>
       </div>
     </div>

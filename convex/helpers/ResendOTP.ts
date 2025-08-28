@@ -21,7 +21,7 @@ export const ResendOTP = Email({
   async sendVerificationRequest({ identifier: email, provider, token }) {
     const resend = new ResendAPI(provider.apiKey);
     const { error } = await resend.emails.send({
-      from: "LeadNova <noreply@leadnova.io>",
+      from: "onboarding@resend.dev",
       to: [email],
       subject: `Your LeadNova verification code`,
       html: `
