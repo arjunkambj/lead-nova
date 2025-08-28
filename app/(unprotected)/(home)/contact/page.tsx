@@ -44,7 +44,7 @@ export default function ContactPage() {
             Contact Us
           </h1>
           <p className="mt-3 text-default-600">
-            Have questions? We're here to help.
+            Have questions? We&apos;re here to help.
           </p>
         </div>
 

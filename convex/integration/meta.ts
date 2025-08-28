@@ -154,7 +154,7 @@ export const getPageForms = action({
         status: v.string(),
         created_time: v.optional(v.string()),
         leads_count: v.optional(v.number()),
-        questions: v.optional(v.array(v.any())),
+        questions: v.optional(v.any()),
       })
     ),
     error: v.optional(v.string()),
@@ -167,7 +167,8 @@ export const getPageForms = action({
       status: string;
       created_time?: string;
       leads_count?: number;
-      questions?: any[];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      questions?: any;
     }>;
     error?: string;
   }> => {
@@ -181,7 +182,8 @@ export const getPageForms = action({
           status: string;
           created_time?: string;
           leads_count?: number;
-          questions?: any[];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      questions?: any;
         }>;
         error?: string;
       } = await ctx.runAction(
@@ -913,7 +915,7 @@ export const fetchPageForms = internalAction({
         status: v.string(),
         created_time: v.optional(v.string()),
         leads_count: v.optional(v.number()),
-        questions: v.optional(v.array(v.any())),
+        questions: v.optional(v.any()),
       })
     ),
     error: v.optional(v.string()),

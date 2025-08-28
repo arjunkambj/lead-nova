@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button, Checkbox, Spinner, Chip, Progress } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,28 +36,7 @@ export default function FormSelectionView() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<number>(0);
 
-  useEffect(() => {
-    const pageDataParam = searchParams.get("pageData");
-    
-    if (pageDataParam) {
-      try {
-        const parsedPageData = JSON.parse(decodeURIComponent(pageDataParam));
-        setPageData(parsedPageData);
-        
-        // Fetch forms for this page
-        fetchForms(parsedPageData);
-      } catch (error) {
-        console.error("Failed to parse page data:", error);
-        toast.error("Failed to load page data. Please try again.");
-        router.push("/onboarding/meta-connect");
-      }
-    } else {
-      toast.error("No page data found. Please reconnect.");
-      router.push("/onboarding/meta-connect");
-    }
-  }, [searchParams, router]);
-
-  const fetchForms = async (data: PageData) => {
+  const fetchForms = useCallback(async (data: PageData) => {
     setIsLoadingForms(true);
     
     try {
@@ -79,7 +58,28 @@ export default function FormSelectionView() {
     } finally {
       setIsLoadingForms(false);
     }
-  };
+  }, [getPageForms]);
+
+  useEffect(() => {
+    const pageDataParam = searchParams.get("pageData");
+    
+    if (pageDataParam) {
+      try {
+        const parsedPageData = JSON.parse(decodeURIComponent(pageDataParam));
+        setPageData(parsedPageData);
+        
+        // Fetch forms for this page
+        fetchForms(parsedPageData);
+      } catch (error) {
+        console.error("Failed to parse page data:", error);
+        toast.error("Failed to load page data. Please try again.");
+        router.push("/onboarding/meta-connect");
+      }
+    } else {
+      toast.error("No page data found. Please reconnect.");
+      router.push("/onboarding/meta-connect");
+    }
+  }, [searchParams, router, fetchForms]);
 
   const handleFormToggle = (formId: string) => {
     const newSelected = new Set(selectedFormIds);

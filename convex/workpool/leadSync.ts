@@ -1,6 +1,7 @@
 "use node";
 
 import { v } from "convex/values";
+import { Id } from "../_generated/dataModel";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 
@@ -52,8 +53,8 @@ export const syncHistoricalLeads = internalAction({
 
       // Get the integration details including selected forms
       const integration: {
-        _id: any;
-        organizationId: any;
+        _id: Id<"metaIntegrations">;
+        organizationId: Id<"organizations">;
         pageId: string;
         pageAccessToken: string;
         leadFormIds?: string[];
