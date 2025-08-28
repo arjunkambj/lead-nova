@@ -1,7 +1,8 @@
 "use client";
+import React from "react";
 import { User } from "@heroui/react";
 
-export default function AuthRightSide({ className }: { className?: string }) {
+const AuthRightSide = React.memo(function AuthRightSide({ className }: { className?: string }) {
   return (
     <div
       className={`relative hidden h-full min-h-[97dvh] flex-col-reverse rounded-md p-10 rounded-l-2xl lg:flex ${className}`}
@@ -36,4 +37,6 @@ export default function AuthRightSide({ className }: { className?: string }) {
       </div>
     </div>
   );
-}
+});
+
+export default AuthRightSide;

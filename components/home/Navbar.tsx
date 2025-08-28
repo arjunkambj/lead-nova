@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Logo from "../shared/Logo";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
@@ -10,6 +10,16 @@ import { Authenticated, Unauthenticated } from "convex/react";
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Memoize toggle function to prevent recreation on each render
+  const toggleMobileMenu = useCallback(() => {
+    setMobileOpen((prev) => !prev);
+  }, []);
+
+  // Memoize close function for mobile menu links
+  const closeMobileMenu = useCallback(() => {
+    setMobileOpen(false);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -64,7 +74,7 @@ export default function Navbar() {
         <button
           aria-label="Toggle menu"
           className="inline-flex h-9 w-9 items-center justify-center rounded-xl  md:hidden"
-          onClick={() => setMobileOpen((v) => !v)}
+          onClick={toggleMobileMenu}
         >
           <Icon
             icon={mobileOpen ? "lucide:x" : "lucide:menu"}
@@ -88,7 +98,7 @@ export default function Navbar() {
                     : undefined,
                 }}
                 className="rounded-lg px-3 py-2 text-sm text-default-700 hover:bg-content2"
-                onClick={() => setMobileOpen(false)}
+                onClick={closeMobileMenu}
               >
                 {link.label}
               </Link>
@@ -100,7 +110,7 @@ export default function Navbar() {
               radius="lg"
               size="sm"
               className="mt-1 w-full"
-              onPress={() => setMobileOpen(false)}
+              onPress={closeMobileMenu}
             >
               Get Started
             </Button>

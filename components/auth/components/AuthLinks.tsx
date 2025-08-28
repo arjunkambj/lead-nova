@@ -7,7 +7,7 @@ interface AuthLinksProps {
   mode: "login" | "signup";
 }
 
-export default function AuthLinks({ mode }: AuthLinksProps) {
+const AuthLinks = React.memo(function AuthLinks({ mode }: AuthLinksProps) {
   return (
     <>
       {mode === "login" && (
@@ -38,4 +38,6 @@ export default function AuthLinks({ mode }: AuthLinksProps) {
       </p>
     </>
   );
-}
+});
+
+export default AuthLinks;

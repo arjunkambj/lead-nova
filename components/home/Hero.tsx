@@ -6,6 +6,12 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { memo } from "react";
+
+// Static data moved outside components to prevent recreation
+const AVATAR_URLS = [1, 2, 3, 4, 5].map(
+  (n) => `https://i.pravatar.cc/80?img=${n}`
+);
 
 export default function Hero() {
   return (
@@ -102,13 +108,11 @@ export default function Hero() {
   );
 }
 
-const HeroAvatarGroup = () => {
-  const avatars = [1, 2, 3, 4, 5].map(
-    (n) => `https://i.pravatar.cc/80?img=${n}`
-  );
+// Memoized component to prevent unnecessary re-renders
+const HeroAvatarGroup = memo(() => {
   return (
     <div className="flex -space-x-2">
-      {avatars.map((src, idx) => (
+      {AVATAR_URLS.map((src, idx) => (
         <Image
           key={src}
           src={src}
@@ -120,4 +124,6 @@ const HeroAvatarGroup = () => {
       ))}
     </div>
   );
-};
+});
+
+HeroAvatarGroup.displayName = "HeroAvatarGroup";

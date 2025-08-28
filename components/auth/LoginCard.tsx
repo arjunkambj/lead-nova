@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
-import { Button, Divider, addToast } from "@heroui/react";
+import React, { useCallback, useMemo } from "react";
+import { Button, Divider } from "@heroui/react";
 import { AnimatePresence, m } from "framer-motion";
 import { Icon } from "@iconify/react";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useRouter } from "next/navigation";
+import { useOTPFlow } from "@/hooks/useAuth";
 import AuthCard from "./components/AuthCard";
 import OAuthButtons from "./components/OAuthButtons";
 import EmailInput from "./components/EmailInput";
@@ -13,26 +12,25 @@ import OtpInput from "./components/OtpInput";
 import AuthLinks from "./components/AuthLinks";
 
 export default function LoginCard() {
-  const { signIn } = useAuthActions();
-  const router = useRouter();
+  const { handleLoginOTP, handleVerifyOTP } = useOTPFlow();
   const [email, setEmail] = React.useState("");
   const [otp, setOtp] = React.useState("");
   const [[page, direction], setPage] = React.useState([0, 0]);
   const [isEmailValid, setIsEmailValid] = React.useState(true);
   const [isOtpValid, setIsOtpValid] = React.useState(true);
 
-  const variants = {
+  const variants = useMemo(() => ({
     enter: (dir: number) => ({ x: dir > 0 ? 20 : -20, opacity: 0 }),
     center: { zIndex: 1, x: 0, opacity: 1 },
     exit: (dir: number) => ({ zIndex: 0, x: dir < 0 ? 20 : -20, opacity: 0 }),
-  };
+  }), []);
 
-  const getPageTitle = () => {
+  const getPageTitle = useMemo(() => {
     if (page === 0) return "Welcome back";
     return "Check your email";
-  };
+  }, [page]);
 
-  const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEmailSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email.length) {
       setIsEmailValid(false);
@@ -40,28 +38,14 @@ export default function LoginCard() {
     }
     setIsEmailValid(true);
     try {
-      const formData = new FormData();
-      formData.set("email", email);
-      await signIn("resend-otp", formData);
+      await handleLoginOTP(email);
       setPage([1, 1]);
-      addToast({
-        title: "Code Sent",
-        description: "Check your email for the verification code",
-        color: "success",
-        timeout: 3000,
-      });
-    } catch (error) {
-      console.error("OTP send error:", error);
-      addToast({
-        title: "Error",
-        description: "Failed to send verification code",
-        color: "danger",
-        timeout: 3000,
-      });
+    } catch {
+      // Error is handled in the hook
     }
-  };
+  }, [email, handleLoginOTP]);
 
-  const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleOtpSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (otp.length !== 6) {
       setIsOtpValid(false);
@@ -69,37 +53,29 @@ export default function LoginCard() {
     }
     setIsOtpValid(true);
     try {
-      const formData = new FormData();
-      formData.set("code", otp);
-      await signIn("resend-otp", formData);
-      addToast({
-        title: "Welcome back!",
-        description: "Successfully signed in.",
-        color: "success",
-        timeout: 2000,
-      });
-      setTimeout(() => {
-        router.push("/overview");
-      }, 500);
-    } catch (error) {
-      console.error("OTP verification error:", error);
+      await handleVerifyOTP(otp);
+    } catch {
       setIsOtpValid(false);
-      addToast({
-        title: "Verification Failed",
-        description: "Invalid or expired code. Please try again.",
-        color: "danger",
-        timeout: 4000,
-      });
     }
-  };
+  }, [otp, handleVerifyOTP]);
 
-  const handleSubmit = page === 0 ? handleEmailSubmit : handleOtpSubmit;
+  const handleSubmit = useMemo(() => 
+    page === 0 ? handleEmailSubmit : handleOtpSubmit,
+    [page, handleEmailSubmit, handleOtpSubmit]
+  );
+
+  const handleBack = useCallback(() => setPage([0, -1]), []);
+  const handleEmailChange = useCallback((value: string) => {
+    setIsEmailValid(true);
+    setEmail(value);
+  }, []);
+  const handleOtpChange = useCallback((value: string) => setOtp(value), []);
 
   return (
     <AuthCard
-      title={getPageTitle()}
+      title={getPageTitle}
       showBack={page > 0}
-      onBack={() => setPage([0, -1])}
+      onBack={handleBack}
     >
       {page === 0 && (
         <>
@@ -127,10 +103,7 @@ export default function LoginCard() {
             <>
               <EmailInput
                 value={email}
-                onChange={(value) => {
-                  setIsEmailValid(true);
-                  setEmail(value);
-                }}
+                onChange={handleEmailChange}
                 isInvalid={!isEmailValid}
               />
               <Button
@@ -151,7 +124,7 @@ export default function LoginCard() {
             <>
               <OtpInput
                 value={otp}
-                onChange={setOtp}
+                onChange={handleOtpChange}
                 isInvalid={!isOtpValid}
                 email={email}
               />

@@ -12,7 +12,7 @@ interface AuthCardProps {
   children: React.ReactNode;
 }
 
-export default function AuthCard({
+const AuthCard = React.memo(function AuthCard({
   title,
   showBack = false,
   onBack,
@@ -49,4 +49,6 @@ export default function AuthCard({
       </div>
     </div>
   );
-}
+});
+
+export default AuthCard;

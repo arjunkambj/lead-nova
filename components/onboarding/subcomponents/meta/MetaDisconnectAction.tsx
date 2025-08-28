@@ -1,9 +1,8 @@
 "use client";
 
 import { Button } from "@heroui/react";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+import { useDisconnectMetaAccount } from "@/hooks/useMeta";
 import { useState } from "react";
 
 interface MetaDisconnectActionProps {
@@ -13,7 +12,7 @@ interface MetaDisconnectActionProps {
 export default function MetaDisconnectAction({
   onDisconnected,
 }: MetaDisconnectActionProps) {
-  const disconnectMeta = useMutation(api.integration.meta.disconnectMetaAccount);
+  const disconnectMeta = useDisconnectMetaAccount();
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   const handleDisconnect = async () => {

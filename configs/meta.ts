@@ -11,12 +11,14 @@ export const META_CONFIG = {
   OAUTH_URL: 'https://www.facebook.com/v23.0/dialog/oauth',
   TOKEN_URL: 'https://graph.facebook.com/v23.0/oauth/access_token',
   
-  // OAuth Scopes - only essential permissions for lead generation
+  // OAuth Scopes - essential permissions for lead generation and business access
   SCOPES: [
     'pages_show_list',
     'pages_read_engagement',
     'leads_retrieval',
-    'pages_manage_metadata'
+    'pages_manage_metadata',
+    'pages_manage_ads',      // Required for accessing lead forms
+    'business_management'    // Required for Business Manager page access
   ],
   
   // Webhook Configuration

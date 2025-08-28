@@ -198,12 +198,19 @@ export const connectMetaAccount = mutation({
         createdAt: now,
         updatedAt: now,
       });
-
-      // Schedule initial historical sync
-      await ctx.scheduler.runAfter(0, internal.integration.meta.startHistoricalSync, {
-        integrationId,
-      });
     }
+    
+    // Always schedule historical sync (for new or reconnected integrations)
+    await ctx.scheduler.runAfter(0, internal.integration.meta.startHistoricalSync, {
+      integrationId,
+    });
+    
+    // Always schedule webhook subscription
+    await ctx.scheduler.runAfter(1000, internal.integration.meta.subscribeToWebhooks, {
+      integrationId,
+      pageId: args.pageId,
+      pageAccessToken: args.pageAccessToken,
+    });
 
     // Update onboarding status to reflect Meta connection
     const onboarding = await ctx.db
@@ -480,7 +487,6 @@ export const startHistoricalSync = internalAction({
     );
 
     if (!integration) {
-      console.error("Integration not found");
       return null;
     }
 
@@ -496,7 +502,7 @@ export const startHistoricalSync = internalAction({
       pageId: integration.pageId,
       jobType: "historical",
     });
-
+    
     // Schedule the sync action directly (Work Pool to be configured later)
     await ctx.scheduler.runAfter(
       0,
@@ -523,7 +529,6 @@ export const syncHistoricalLeads = internalAction({
   returns: v.null(),
   handler: async (ctx, args) => {
     try {
-      console.log(`Starting historical sync for page ${args.pageId}`);
 
       // Update job status to processing
       await ctx.runMutation(internal.integration.meta.updateSyncJobStatus, {
@@ -558,14 +563,12 @@ export const syncHistoricalLeads = internalAction({
         throw new Error(result.error || "Historical sync failed");
       }
 
-    } catch (error) {
-      console.error("Historical sync failed:", error);
-      
+    } catch (_error) {
       // Update job status to failed
       await ctx.runMutation(internal.integration.meta.updateSyncJobStatus, {
         jobId: args.jobId,
         status: "failed",
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: _error instanceof Error ? _error.message : "Unknown error",
       });
 
       // Update integration sync status
@@ -574,9 +577,44 @@ export const syncHistoricalLeads = internalAction({
         status: "failed",
       });
 
-      throw error;
+      throw _error;
     }
 
+    return null;
+  },
+});
+
+export const subscribeToWebhooks = internalAction({
+  args: {
+    integrationId: v.id("metaIntegrations"),
+    pageId: v.string(),
+    pageAccessToken: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    try {
+      // Get webhook URL from Convex
+      const convexUrl = process.env.CONVEX_SITE_URL || process.env.NEXT_PUBLIC_CONVEX_URL;
+      if (!convexUrl) {
+        return null;
+      }
+      
+      const webhookUrl = `${convexUrl.replace('.convex.cloud', '.convex.site')}/webhook/meta`;
+      
+      // Initialize Meta API with page access token
+      const { getMetaAPI } = await import("../../lib/meta/api");
+      const metaAPI = getMetaAPI(args.pageAccessToken);
+      
+      // Subscribe to webhooks
+      await metaAPI.subscribePageWebhook(
+        args.pageId,
+        webhookUrl,
+        args.pageAccessToken
+      );
+    } catch {
+      // Silently fail webhook subscription
+    }
+    
     return null;
   },
 });
@@ -587,11 +625,7 @@ export const onSyncComplete = internalMutation({
     error: v.optional(v.string()),
   },
   returns: v.null(),
-  handler: async (_ctx, args) => {
-    console.log("Sync completed:", args.success ? "Success" : "Failed");
-    if (args.error) {
-      console.error("Sync error:", args.error);
-    }
+  handler: async () => {
     return null;
   },
 });
@@ -670,6 +704,7 @@ export const getIntegrationById = internalQuery({
     v.object({
       organizationId: v.id("organizations"),
       pageId: v.string(),
+      pageName: v.string(),
       pageAccessToken: v.string(),
     })
   ),
@@ -680,6 +715,7 @@ export const getIntegrationById = internalQuery({
     return {
       organizationId: integration.organizationId,
       pageId: integration.pageId,
+      pageName: integration.pageName,
       pageAccessToken: integration.pageAccessToken,
     };
   },

@@ -176,51 +176,6 @@ export const createOrganization = mutation({
   },
 });
 
-export const updateOrganization = mutation({
-  args: {
-    name: v.string(),
-    mobileNumber: v.optional(v.string()),
-    operatingCity: v.optional(v.string()),
-  },
-  returns: v.object({
-    success: v.boolean(),
-    organizationId: v.id("organizations"),
-  }),
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
-
-    const user = await ctx.db.get(userId);
-    if (!user || !user.organizationId) {
-      throw new Error("User or organization not found");
-    }
-
-    const organization = await ctx.db.get(user.organizationId);
-    if (!organization) {
-      throw new Error("Organization not found");
-    }
-
-    // Check if user is the owner or has admin role
-    if (organization.ownerId !== userId && user.role !== "clientAdmin") {
-      throw new Error("You don't have permission to update this organization");
-    }
-
-    const now = Date.now();
-    
-    // Update the organization
-    await ctx.db.patch(user.organizationId, {
-      name: args.name,
-      mobileNumber: args.mobileNumber,
-      operatingCity: args.operatingCity,
-      updatedAt: now,
-    });
-
-    return {
-      success: true,
-      organizationId: user.organizationId,
-    };
-  },
-});
 
 export const updateOnboardingStep = mutation({
   args: {
@@ -427,51 +382,6 @@ export const skipOnboardingStep = mutation({
   },
 });
 
-export const updateMetaConnectionStatus = mutation({
-  args: {
-    isConnected: v.boolean(),
-  },
-  returns: v.object({
-    success: v.boolean(),
-  }),
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
-
-    const user = await ctx.db.get(userId);
-    if (!user || !user.organizationId) {
-      throw new Error("User or organization not found");
-    }
-
-    const onboarding = await ctx.db
-      .query("onboarding")
-      .withIndex("byUserOrganization", (q) => 
-        q.eq("userId", userId).eq("organizationId", user.organizationId!)
-      )
-      .first();
-
-    if (!onboarding) {
-      throw new Error("Onboarding record not found");
-    }
-
-    const now = Date.now();
-    
-    // Update Meta connection status and advance to next step if connected
-    const updates: Record<string, unknown> = {
-      isMetaConnected: args.isConnected,
-      updatedAt: now,
-    };
-
-    // If Meta is connected and we're on step 2, advance to step 3
-    if (args.isConnected && onboarding.onboardingStep === 2) {
-      updates.onboardingStep = 3;
-    }
-
-    await ctx.db.patch(onboarding._id, updates);
-
-    return { success: true };
-  },
-});
 
 export const resetOnboarding = mutation({
   args: {},

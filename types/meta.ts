@@ -23,6 +23,8 @@ export interface MetaPage {
       url: string;
     };
   };
+  tasks?: string[];
+  lead_forms_count?: number;
 }
 
 export interface MetaLeadFormField {

@@ -1,15 +1,135 @@
 "use client";
 
 import MainHeader from "@/components/shared/MainHeader";
-import { Button, Card, CardBody, CardHeader, Divider, Chip, Avatar, Skeleton } from "@heroui/react";
+import { 
+  Button, 
+  Skeleton, 
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Input
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useOverview } from "@/hooks/useOverview";
+import { useDashboardData } from "@/hooks/useDashboard";
+import { useResetEverything } from "@/hooks/useUser";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { addToast } from "@heroui/react";
+import { useRouter } from "next/navigation";
+
+import UserDetailsCard from "./UserDetailsCard";
+import OrganizationOverviewCard from "./OrganizationOverviewCard";
+import LeadStatisticsCard from "./LeadStatisticsCard";
+import SyncStatusCard from "./SyncStatusCard";
+import RecentLeadsCard from "./RecentLeadsCard";
+import QuickActionsGrid from "./QuickActionsGrid";
 
 export default function OverviewView() {
-  const { user, organization, isResetting, handleResetOnboarding } = useOverview();
+  const router = useRouter();
+  const dashboardData = useDashboardData(5);
+  const resetEverything = useResetEverything();
+  
+  const [isResettingEverything, setIsResettingEverything] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
+  
+  const prevSyncJobRef = useRef<string | null>(null);
 
-  // Loading state
-  if (!user || !organization) {
+  const user = dashboardData?.user;
+  const organization = dashboardData?.organization;
+  const stats = dashboardData?.stats;
+  const latestLeads = dashboardData?.latestLeads;
+  const syncStatus = dashboardData?.syncStatus;
+
+  const getUserRoleDisplay = useCallback((role?: string) => {
+    const roleMap = {
+      clientAdmin: { label: "Admin", color: "primary" as const },
+      manager: { label: "Manager", color: "secondary" as const },
+      member: { label: "Member", color: "default" as const },
+      superAdmin: { label: "Super Admin", color: "danger" as const },
+      oppsDev: { label: "Ops Dev", color: "warning" as const },
+    };
+    return roleMap[role as keyof typeof roleMap] || { label: "Unknown", color: "default" as const };
+  }, []);
+
+  const roleInfo = useMemo(() => getUserRoleDisplay(user?.role), [user?.role, getUserRoleDisplay]);
+
+  useEffect(() => {
+    if (syncStatus) {
+      const currentJobId = syncStatus.currentJob?._id || null;
+      const prevJobId = prevSyncJobRef.current;
+      
+      if (prevJobId && !currentJobId) {
+        const completedJob = syncStatus.recentJobs.find((job) => job._id === prevJobId);
+        if (completedJob) {
+          if (completedJob.status === "completed") {
+            addToast({
+              title: "Sync Completed",
+              description: `Successfully synced ${completedJob.totalLeads || 0} leads`,
+              color: "success",
+            });
+          } else if (completedJob.status === "failed") {
+            addToast({
+              title: "Sync Failed",
+              description: "The sync job encountered an error",
+              color: "danger",
+            });
+          }
+        }
+      }
+      
+      prevSyncJobRef.current = currentJobId;
+    }
+  }, [syncStatus]);
+
+  const handleResetEverything = useCallback(async () => {
+    if (resetConfirmText !== "RESET") {
+      addToast({
+        title: "Invalid Confirmation",
+        description: "Please type RESET to confirm",
+        color: "warning",
+      });
+      return;
+    }
+
+    setIsResettingEverything(true);
+    setShowResetModal(false);
+    
+    try {
+      const result = await resetEverything();
+      
+      if (result.success) {
+        addToast({
+          title: "Reset Complete",
+          description: result.message,
+          color: "success",
+        });
+        
+        setTimeout(() => {
+          router.push("/onboarding/create-organization");
+        }, 1000);
+      }
+    } catch (error) {
+      addToast({
+        title: "Reset Failed",
+        description: error instanceof Error ? error.message : "Failed to reset everything",
+        color: "danger",
+      });
+      setIsResettingEverything(false);
+    }
+  }, [resetConfirmText, resetEverything, router]);
+
+  const handleResetClick = useCallback(() => {
+    setShowResetModal(true);
+  }, []);
+
+  const handleModalClose = useCallback(() => {
+    setShowResetModal(false);
+    setResetConfirmText("");
+  }, []);
+
+  if (!user || !organization || !stats || !syncStatus) {
     return (
       <div className="flex flex-col gap-1">
         <MainHeader title="Overview" />
@@ -21,25 +141,11 @@ export default function OverviewView() {
     );
   }
 
-  const getUserRoleDisplay = (role?: string) => {
-    const roleMap = {
-      clientAdmin: { label: "Admin", color: "primary" },
-      manager: { label: "Manager", color: "secondary" },
-      member: { label: "Member", color: "default" },
-      superAdmin: { label: "Super Admin", color: "danger" },
-      oppsDev: { label: "Ops Dev", color: "warning" },
-    };
-    return roleMap[role as keyof typeof roleMap] || { label: "Unknown", color: "default" };
-  };
-
-  const roleInfo = getUserRoleDisplay(user.role);
-
   return (
     <div className="flex flex-col gap-1">
       <MainHeader title="Overview" />
       
       <div className="flex-1 space-y-6">
-        {/* Welcome Section */}
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold text-foreground">
             Welcome back, {user.name || "User"}!
@@ -53,173 +159,87 @@ export default function OverviewView() {
           </Button>
         </div>
 
-        {/* User Details Card */}
-        <Card className="w-full">
-          <CardHeader className="flex justify-between items-start">
-            <div className="flex gap-4">
-              <Avatar
-                name={user.name || user.email}
-                src={user.image}
-                size="lg"
-                className="text-large"
-              />
-              <div className="flex flex-col gap-1">
-                <h3 className="text-lg font-semibold">{user.name || "Not set"}</h3>
-                <p className="text-sm text-default-500">{user.email || "No email"}</p>
-                <Chip
-                  size="sm"
-                  color={roleInfo.color as "primary" | "secondary" | "default" | "danger" | "warning" | "success"}
-                  variant="flat"
-                >
-                  {roleInfo.label}
-                </Chip>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="flat"
-                startContent={<Icon icon="solar:settings-linear" width={16} />}
-              >
-                Settings
-              </Button>
-            </div>
-          </CardHeader>
-          <Divider />
-          <CardBody className="gap-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-xs text-default-500 mb-1">Organization</p>
-                <p className="text-sm font-medium">{organization.name}</p>
-              </div>
-              <div>
-                <p className="text-xs text-default-500 mb-1">Status</p>
-                <Chip size="sm" color="success" variant="flat">
-                  {user.status || "Active"}
-                </Chip>
-              </div>
-              <div>
-                <p className="text-xs text-default-500 mb-1">Team Members</p>
-                <p className="text-sm font-medium">{organization.totalMembers || 0}</p>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+        <UserDetailsCard 
+          user={user}
+          organization={organization}
+          roleInfo={roleInfo}
+        />
 
-        {/* Organization Overview Card */}
-        <Card className="w-full">
-          <CardHeader className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Organization Overview</h3>
-            <Icon icon="solar:buildings-bold" width={24} className="text-primary" />
-          </CardHeader>
-          <Divider />
-          <CardBody className="gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-default-500">Organization Name</span>
-                  <span className="text-sm font-medium">{organization.name}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-default-500">Active Members</span>
-                  <span className="text-sm font-medium">
-                    {organization.activeMembers?.length || 0}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-default-500">Invited Members</span>
-                  <span className="text-sm font-medium">
-                    {organization.invitedMembers?.length || 0}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-default-500">Your Role</span>
-                  <Chip size="sm" color={roleInfo.color as "primary" | "secondary" | "default" | "danger" | "warning" | "success"} variant="flat">
-                    {roleInfo.label}
-                  </Chip>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-default-500">Onboarding Status</span>
-                  <Chip size="sm" color="success" variant="flat">
-                    Completed
-                  </Chip>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-default-500">Account Created</span>
-                  <span className="text-sm font-medium">
-                    {user.createdAt 
-                      ? new Date(user.createdAt).toLocaleDateString()
-                      : "Unknown"}
-                  </span>
-                </div>
-              </div>
-            </div>
+        <OrganizationOverviewCard
+          user={user}
+          organization={organization}
+          roleInfo={roleInfo}
+          isResettingEverything={isResettingEverything}
+          onResetClick={handleResetClick}
+        />
 
-            {/* Reset Onboarding Section */}
-            <Divider className="my-4" />
-            <div className="flex justify-between items-center">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Reset Onboarding</p>
-                <p className="text-xs text-default-500">
-                  Start the onboarding process again to update your organization settings
-                </p>
-              </div>
-              <Button
-                color="warning"
-                variant="flat"
-                size="sm"
-                isLoading={isResetting}
-                onPress={handleResetOnboarding}
-                startContent={!isResetting && <Icon icon="solar:restart-linear" width={16} />}
-              >
-                Reset Onboarding
-              </Button>
-            </div>
-          </CardBody>
-        </Card>
+        <LeadStatisticsCard stats={stats} />
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardBody className="flex flex-row items-center gap-4">
-              <div className="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
-                <Icon icon="solar:users-group-rounded-bold" width={24} className="text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Manage Team</p>
-                <p className="text-xs text-default-500">Invite or manage members</p>
-              </div>
-            </CardBody>
-          </Card>
+        <SyncStatusCard 
+          syncStatus={syncStatus}
+          prevSyncJobId={prevSyncJobRef.current}
+        />
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardBody className="flex flex-row items-center gap-4">
-              <div className="p-3 bg-secondary-100 dark:bg-secondary-900/20 rounded-lg">
-                <Icon icon="solar:settings-bold" width={24} className="text-secondary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Settings</p>
-                <p className="text-xs text-default-500">Configure preferences</p>
-              </div>
-            </CardBody>
-          </Card>
+        <RecentLeadsCard latestLeads={latestLeads || []} />
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardBody className="flex flex-row items-center gap-4">
-              <div className="p-3 bg-success-100 dark:bg-success-900/20 rounded-lg">
-                <Icon icon="solar:chart-square-bold" width={24} className="text-success" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Analytics</p>
-                <p className="text-xs text-default-500">View insights</p>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+        <QuickActionsGrid />
       </div>
+
+      <Modal 
+        isOpen={showResetModal} 
+        onClose={handleModalClose}
+        size="md"
+        placement="center"
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            <h3 className="text-danger">Reset Everything</h3>
+            <p className="text-xs text-default-500 font-normal">This action cannot be undone</p>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="p-3 bg-danger-50 dark:bg-danger-900/20 rounded-lg">
+                <p className="text-sm text-danger font-medium mb-2">This will permanently delete:</p>
+                <ul className="text-xs text-danger-600 dark:text-danger-400 space-y-1 list-disc list-inside">
+                  <li>All your leads and lead data</li>
+                  <li>All Meta/Facebook integrations</li>
+                  <li>All sync jobs and history</li>
+                  <li>Your onboarding progress</li>
+                  <li>Organization settings</li>
+                </ul>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm">To confirm, type <span className="font-mono font-bold">RESET</span> below:</p>
+                <Input
+                  placeholder="Type RESET to confirm"
+                  value={resetConfirmText}
+                  onValueChange={setResetConfirmText}
+                  variant="bordered"
+                  classNames={{
+                    input: "font-mono",
+                  }}
+                />
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button 
+              variant="light" 
+              onPress={handleModalClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="danger"
+              onPress={handleResetEverything}
+              isDisabled={resetConfirmText !== "RESET"}
+              isLoading={isResettingEverything}
+            >
+              Reset Everything
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

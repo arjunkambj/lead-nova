@@ -2,6 +2,7 @@
 
 import { Icon } from "@iconify/react";
 
+// Static data moved outside component to prevent recreation on each render
 const features = [
   {
     icon: "ri:facebook-fill",
@@ -58,9 +59,9 @@ export default function FeatureGrid() {
             {/* Top Row */}
             <div className="flex flex-col sm:flex-row gap-6">
               {/* Meta Integration - Large Card */}
-              <div className="sm:w-1/2 bg-content1 border border-divider rounded-2xl p-8 hover:border-primary/50 transition-colors">
+              <div className="sm:w-1/2 bg-content1 border border-divider rounded-2xl p-8 hover:border-primary-300 transition-colors">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 rounded-xl bg-primary/10">
+                  <div className="p-3 rounded-xl bg-primary-50">
                     <Icon icon={features[0].icon} className="text-primary" width={24} />
                   </div>
                   <span className="text-xs text-default-500 bg-content2 px-2 py-1 rounded-full">Core</span>
@@ -74,9 +75,9 @@ export default function FeatureGrid() {
               </div>
 
               {/* Real-Time Capture */}
-              <div className="sm:w-1/2 bg-content1 border border-divider rounded-2xl p-8 hover:border-primary/50 transition-colors">
+              <div className="sm:w-1/2 bg-content1 border border-divider rounded-2xl p-8 hover:border-primary-300 transition-colors">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 rounded-xl bg-warning/10">
+                  <div className="p-3 rounded-xl bg-warning-50">
                     <Icon icon={features[1].icon} className="text-warning" width={24} />
                   </div>
                   <span className="text-xs text-default-500 bg-content2 px-2 py-1 rounded-full">Fast</span>
@@ -93,9 +94,9 @@ export default function FeatureGrid() {
             </div>
 
             {/* Analytics - Wide Card */}
-            <div className="bg-content1 border border-divider rounded-2xl p-8 hover:border-primary/50 transition-colors">
+            <div className="bg-content1 border border-divider rounded-2xl p-8 hover:border-primary-300 transition-colors">
               <div className="flex items-start justify-between mb-4">
-                <div className="p-3 rounded-xl bg-success/10">
+                <div className="p-3 rounded-xl bg-success-50">
                   <Icon icon={features[3].icon} className="text-success" width={24} />
                 </div>
                 <span className="text-xs text-default-500 bg-content2 px-2 py-1 rounded-full">Analytics</span>
@@ -108,7 +109,7 @@ export default function FeatureGrid() {
                 {[40, 65, 45, 80, 55, 70, 60, 75].map((height, i) => (
                   <div key={i} className="flex items-end">
                     <div 
-                      className="w-full bg-primary/20 rounded-t"
+                      className="w-full bg-primary-100 rounded-t"
                       style={{ height: `${height}%` }}
                     ></div>
                   </div>
@@ -119,9 +120,9 @@ export default function FeatureGrid() {
 
           {/* Right Column - Tall Card */}
           <div className="lg:w-4/12">
-            <div className="h-full bg-content1 border border-divider rounded-2xl p-8 hover:border-primary/50 transition-colors">
+            <div className="h-full bg-content1 border border-divider rounded-2xl p-8 hover:border-primary-300 transition-colors">
               <div className="flex items-start justify-between mb-4">
-                <div className="p-3 rounded-xl bg-secondary/10">
+                <div className="p-3 rounded-xl bg-secondary-50">
                   <Icon icon={features[4].icon} className="text-secondary" width={24} />
                 </div>
                 <span className="text-xs text-default-500 bg-content2 px-2 py-1 rounded-full">Pro</span>
@@ -139,14 +140,14 @@ export default function FeatureGrid() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-primary/60 rounded-full"></div>
+                  <div className="w-3 h-3 bg-primary-300 rounded-full"></div>
                   <div className="flex-1">
                     <p className="text-xs font-medium text-default-900">30 Days</p>
                     <p className="text-xs text-default-500">Professional plan</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-primary/30 rounded-full"></div>
+                  <div className="w-3 h-3 bg-primary-200 rounded-full"></div>
                   <div className="flex-1">
                     <p className="text-xs font-medium text-default-900">90 Days</p>
                     <p className="text-xs text-default-500">Business plan</p>
@@ -169,7 +170,7 @@ export default function FeatureGrid() {
                       <span className="text-xs text-default-600">{n}</span>
                     </div>
                   ))}
-                  <div className="w-8 h-8 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-primary-50 border-2 border-background flex items-center justify-center">
                     <Icon icon="lucide:plus" className="text-primary" width={14} />
                   </div>
                 </div>

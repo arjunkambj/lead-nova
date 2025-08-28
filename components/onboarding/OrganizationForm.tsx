@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { Button, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { addToast } from "@heroui/react";
@@ -15,7 +15,7 @@ export default function OrganizationForm() {
   const [name, setName] = React.useState("");
   const [mobileNumber, setMobileNumber] = React.useState("");
   const [operatingCity, setOperatingCity] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errors, setErrors] = React.useState<{ 
     name?: string; 
     mobileNumber?: string; 
@@ -43,30 +43,21 @@ export default function OrganizationForm() {
     }
   }, [onboardingStatus?.organization]);
 
-  // Only check for user, not onboardingStatus
-  if (!user) {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  const handleNameChange = (value: string) => {
+  const handleNameChange = useCallback((value: string) => {
     setName(value);
     if (errors.name) {
-      setErrors({ ...errors, name: undefined });
+      setErrors(prev => ({ ...prev, name: undefined }));
     }
-  };
+  }, [errors.name]);
 
-  const handleMobileNumberChange = (value: string) => {
+  const handleMobileNumberChange = useCallback((value: string) => {
     setMobileNumber(value);
     if (errors.mobileNumber) {
-      setErrors({ ...errors, mobileNumber: undefined });
+      setErrors(prev => ({ ...prev, mobileNumber: undefined }));
     }
-  };
+  }, [errors.mobileNumber]);
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const newErrors: { name?: string; mobileNumber?: string } = {};
 
     if (!name.trim()) {
@@ -82,16 +73,16 @@ export default function OrganizationForm() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [name, mobileNumber]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       const result = await createOrganization({
@@ -121,9 +112,20 @@ export default function OrganizationForm() {
         color: "danger",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
-  };
+  }, [validateForm, createOrganization, name, mobileNumber, operatingCity, isEditMode, router]);
+
+  // Unified loading state - check after all hooks are defined
+  const isLoading = useMemo(() => !user, [user]);
+  
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -186,7 +188,7 @@ export default function OrganizationForm() {
         type="submit"
         color="primary"
         className="w-full mt-4"
-        isLoading={isLoading}
+        isLoading={isSubmitting}
       >
         {isEditMode ? "Update & Continue" : "Create Organization"}
       </Button>

@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { Button, Divider, Input, addToast } from "@heroui/react";
 import { AnimatePresence, m } from "framer-motion";
 import { Icon } from "@iconify/react";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useRouter } from "next/navigation";
+import { useOTPFlow } from "@/hooks/useAuth";
 import AuthCard from "./components/AuthCard";
 import OAuthButtons from "./components/OAuthButtons";
 import EmailInput from "./components/EmailInput";
@@ -13,8 +12,7 @@ import OtpInput from "./components/OtpInput";
 import AuthLinks from "./components/AuthLinks";
 
 export default function SignupCard() {
-  const { signIn } = useAuthActions();
-  const router = useRouter();
+  const { handleSignupOTP, handleVerifyOTP } = useOTPFlow();
   const [email, setEmail] = React.useState("");
   const [name, setName] = React.useState("");
   const [otp, setOtp] = React.useState("");
@@ -23,19 +21,19 @@ export default function SignupCard() {
   const [isNameValid, setIsNameValid] = React.useState(true);
   const [isOtpValid, setIsOtpValid] = React.useState(true);
 
-  const variants = {
+  const variants = useMemo(() => ({
     enter: (dir: number) => ({ x: dir > 0 ? 20 : -20, opacity: 0 }),
     center: { zIndex: 1, x: 0, opacity: 1 },
     exit: (dir: number) => ({ zIndex: 0, x: dir < 0 ? 20 : -20, opacity: 0 }),
-  };
+  }), []);
 
-  const getPageTitle = () => {
+  const getPageTitle = useMemo(() => {
     if (page === 0) return "Get started for free";
     if (page === 1) return "Complete your profile";
     return "Verify your email";
-  };
+  }, [page]);
 
-  const handleEmailSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEmailSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email.length) {
       setIsEmailValid(false);
@@ -43,9 +41,9 @@ export default function SignupCard() {
     }
     setIsEmailValid(true);
     setPage([1, 1]);
-  };
+  }, [email]);
 
-  const handleDetailsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleDetailsSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.length) {
       setIsNameValid(false);
@@ -54,29 +52,14 @@ export default function SignupCard() {
     setIsNameValid(true);
 
     try {
-      const formData = new FormData();
-      formData.set("email", email);
-      formData.set("name", name);
-      await signIn("resend-otp", formData);
+      await handleSignupOTP(email, name);
       setPage([2, 1]);
-      addToast({
-        title: "Code Sent",
-        description: "Check your email for the verification code",
-        color: "success",
-        timeout: 3000,
-      });
-    } catch (error) {
-      console.error("Signup error:", error);
-      addToast({
-        title: "Error",
-        description: "Failed to send verification code",
-        color: "danger",
-        timeout: 3000,
-      });
+    } catch {
+      // Error is handled in the hook
     }
-  };
+  }, [name, email, handleSignupOTP]);
 
-  const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleOtpSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (otp.length !== 6) {
       setIsOtpValid(false);
@@ -85,34 +68,36 @@ export default function SignupCard() {
     setIsOtpValid(true);
 
     try {
-      const formData = new FormData();
-      formData.set("code", otp);
-      await signIn("resend-otp", formData);
+      await handleVerifyOTP(otp);
       addToast({
         title: "Account Created!",
         description: "Your account has been successfully created.",
         color: "success",
         timeout: 3000,
       });
-      setTimeout(() => {
-        router.push("/overview");
-      }, 1000);
-    } catch (error) {
-      console.error("OTP verification error:", error);
+    } catch {
       setIsOtpValid(false);
-      addToast({
-        title: "Verification Failed",
-        description: "Invalid or expired code. Please try again.",
-        color: "danger",
-        timeout: 4000,
-      });
     }
-  };
+  }, [otp, handleVerifyOTP]);
 
-  const handleSubmit = page === 0 ? handleEmailSubmit : page === 1 ? handleDetailsSubmit : handleOtpSubmit;
+  const handleSubmit = useMemo(() => 
+    page === 0 ? handleEmailSubmit : page === 1 ? handleDetailsSubmit : handleOtpSubmit,
+    [page, handleEmailSubmit, handleDetailsSubmit, handleOtpSubmit]
+  );
+
+  const handleBack = useCallback(() => setPage([Math.max(0, page - 1), -1]), [page]);
+  const handleEmailChange = useCallback((value: string) => {
+    setIsEmailValid(true);
+    setEmail(value);
+  }, []);
+  const handleNameChange = useCallback((value: string) => {
+    setIsNameValid(true);
+    setName(value);
+  }, []);
+  const handleOtpChange = useCallback((value: string) => setOtp(value), []);
 
   return (
-    <AuthCard title={getPageTitle()} showBack={page > 0} onBack={() => setPage([Math.max(0, page - 1), -1])}>
+    <AuthCard title={getPageTitle} showBack={page > 0} onBack={handleBack}>
       {page === 0 && (
         <>
           <OAuthButtons mode="signup" />
@@ -139,16 +124,13 @@ export default function SignupCard() {
             <>
               <EmailInput
                 value={email}
-                onChange={(value) => {
-                  setIsEmailValid(true);
-                  setEmail(value);
-                }}
+                onChange={handleEmailChange}
                 isInvalid={!isEmailValid}
               />
               <Button
                 fullWidth
                 type="submit"
-                className="bg-gradient-to-br from-primary-500 to-primary-600 text-white"
+                color="primary"
                 startContent={<Icon className="pointer-events-none text-2xl" icon="solar:letter-bold" />}
               >
                 Continue with Email
@@ -166,21 +148,18 @@ export default function SignupCard() {
                 variant="bordered"
                 label="Full Name"
                 startContent={<Icon className="text-default-400" icon="solar:user-linear" width={20} />}
-                onValueChange={(value) => {
-                  setIsNameValid(true);
-                  setName(value);
-                }}
+                onValueChange={handleNameChange}
               />
-              <Button fullWidth className="bg-gradient-to-br from-primary-500 to-primary-600 text-white" type="submit">
+              <Button fullWidth color="primary" type="submit">
                 Continue
               </Button>
             </>
           ) : (
             <>
-              <OtpInput value={otp} onChange={setOtp} isInvalid={!isOtpValid} email={email} />
+              <OtpInput value={otp} onChange={handleOtpChange} isInvalid={!isOtpValid} email={email} />
               <Button
                 fullWidth
-                className="bg-gradient-to-br from-primary-500 to-primary-600 text-white"
+                color="primary"
                 type="submit"
               >
                 Verify & Create Account

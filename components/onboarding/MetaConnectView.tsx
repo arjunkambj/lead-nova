@@ -2,8 +2,6 @@
 
 import { Card, Chip, Avatar, Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import OnboardingCard from "./OnboardingCard";
@@ -12,11 +10,12 @@ import MetaDisconnectAction from "./subcomponents/meta/MetaDisconnectAction";
 import MetaSyncStatus from "./subcomponents/meta/MetaSyncStatus";
 import MetaCallbackHandler from "./subcomponents/meta/MetaCallbackHandler";
 import { useOnboardingStatus, useUpdateOnboardingStep, useSkipOnboardingStep } from "@/hooks/useOnboarding";
+import { useMetaConnectionStatus } from "@/hooks/useMeta";
 
 export default function MetaConnectView() {
   const router = useRouter();
   const onboardingStatus = useOnboardingStatus();
-  const connectionStatus = useQuery(api.integration.meta.getConnectionStatus);
+  const connectionStatus = useMetaConnectionStatus();
   const updateOnboardingStep = useUpdateOnboardingStep();
   const skipOnboardingStep = useSkipOnboardingStep();
 
@@ -188,6 +187,36 @@ export default function MetaConnectView() {
 
           {/* Sync Status if actively syncing */}
           <MetaSyncStatus syncStatus={connectionStatus?.syncStatus} />
+          
+          {/* Development Mode Notice */}
+          {process.env.NODE_ENV === 'development' && (
+            <Card className="p-4 bg-blue-50">
+              <div className="flex items-start space-x-2">
+                <Icon 
+                  icon="solar:info-circle-bold" 
+                  width={20} 
+                  height={20} 
+                  className="text-blue-600 mt-0.5"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-700">
+                    Development Mode Active
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Your Facebook app is in development mode. Some features may be limited:
+                  </p>
+                  <ul className="text-xs text-blue-600 mt-2 space-y-1">
+                    <li>• Lead forms may not be accessible via API</li>
+                    <li>• Only test leads from app users will be captured</li>
+                    <li>• Webhooks will only receive events from test users</li>
+                  </ul>
+                  <p className="text-xs text-blue-700 mt-2 font-medium">
+                    To access all features, submit your app for Facebook review.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
       </OnboardingCard>
     </>

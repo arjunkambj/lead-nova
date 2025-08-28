@@ -13,7 +13,7 @@ interface OtpInputProps {
   onResend?: () => void;
 }
 
-export default function OtpInput({
+const OtpInput = React.memo(function OtpInput({
   value,
   onChange,
   isInvalid = false,
@@ -47,4 +47,6 @@ export default function OtpInput({
       )}
     </>
   );
-}
+});
+
+export default OtpInput;

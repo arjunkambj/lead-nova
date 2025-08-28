@@ -36,9 +36,7 @@ export const syncHistoricalLeads = internalAction({
       // Calculate date range (default: last 30 days)
       const endDate = args.endDate || Date.now();
       const startDate = args.startDate || (endDate - 30 * 24 * 60 * 60 * 1000);
-      const sinceDate = new Date(startDate);
-
-      console.log(`Starting historical sync for page ${args.pageId} from ${sinceDate.toISOString()}`);
+      new Date(startDate); // For date validation
 
       // Update sync status to processing
       await ctx.runMutation(internal.integration.meta.updateSyncStatus, {
@@ -47,8 +45,24 @@ export const syncHistoricalLeads = internalAction({
       });
 
       // Get all lead forms for the page
-      const forms = await metaAPI.getPageLeadForms(args.pageId);
-      console.log(`Found ${forms.length} lead forms for page ${args.pageId}`);
+      let forms: Array<{
+        id: string;
+        name: string;
+        status: string;
+        leads_count?: number;
+      }> = [];
+      
+      try {
+        forms = await metaAPI.getPageLeadForms(args.pageId);
+      } catch (error) {
+        
+        // Check if this is a permissions error
+        if (error instanceof Error && error.message.includes("permissions")) {
+          throw new Error("Missing permissions to access lead forms. Please ensure the page has lead access enabled and reconnect.");
+        }
+        
+        // For other errors, continue with empty forms array
+      }
 
       // Get the organization ID for this integration
       const integration = await ctx.runQuery(
@@ -59,6 +73,24 @@ export const syncHistoricalLeads = internalAction({
       if (!integration) {
         throw new Error("Integration not found");
       }
+      
+      // If no forms found, update status and return early
+      if (forms.length === 0) {
+        // Update sync status to completed (even though no leads were found)
+        await ctx.runMutation(internal.integration.meta.updateSyncStatus, {
+          integrationId: args.integrationId,
+          status: "completed",
+          lastSyncedAt: Date.now(),
+        });
+        
+        return {
+          success: true,
+          totalLeads: 0,
+          processedLeads: 0,
+          failedLeads: 0,
+          error: "No lead forms found. Please create lead generation forms in Facebook Ads Manager."
+        };
+      }
 
       // Process each form
       for (const form of forms) {
@@ -67,23 +99,55 @@ export const syncHistoricalLeads = internalAction({
           continue;
         }
 
-        console.log(`Processing form ${form.name} (${form.id})`);
+        console.log(`\n📂 Processing form: ${form.name}`);
+        console.log(`   Form ID: ${form.id}`);
+        console.log(`   Status: ${form.status}`);
 
         let hasMore = true;
         let cursor: string | undefined;
+        let previousCursor: string | undefined;
         let formLeadCount = 0;
+        let batchCount = 0;
+        const MAX_BATCHES = 100; // Increased safety limit for larger forms
+        const MAX_LEADS_PER_FORM = 10000; // Maximum leads to fetch per form
+        const seenLeadIds = new Set<string>(); // Track seen leads to detect duplicates
 
-        while (hasMore) {
+        while (hasMore && batchCount < MAX_BATCHES && formLeadCount < MAX_LEADS_PER_FORM) {
+          batchCount++;
           try {
+            console.log(`   🔄 Fetching leads batch ${batchCount} (total so far: ${formLeadCount})...`);
             // Fetch leads from Meta API with pagination
-            const result = await metaAPI.getFormLeads(form.id, 100);
+            const result = await metaAPI.getFormLeads(form.id, 100, cursor);
             const leads = result.leads || [];
             
-            totalLeads += leads.length;
-            formLeadCount += leads.length;
-
+            console.log(`   📥 Received ${leads.length} leads in batch ${batchCount}`);
+            
+            // Check if we're getting duplicate data (infinite loop detection)
+            if (leads.length === 0) {
+              console.log(`   ✅ No more leads to fetch (empty batch)`);
+              hasMore = false;
+              break;
+            }
+            
+            // Check if cursor hasn't changed (another infinite loop detection)
+            if (cursor && cursor === previousCursor) {
+              console.log(`   ⚠️ Cursor unchanged, stopping to prevent infinite loop`);
+              hasMore = false;
+              break;
+            }
+            
+            let newLeadsInBatch = 0;
+            
             // Process each lead
             for (const lead of leads) {
+              // Skip if we've already seen this lead (duplicate detection)
+              if (seenLeadIds.has(lead.id)) {
+                console.log(`   ⚠️ Duplicate lead detected: ${lead.id}, skipping...`);
+                continue;
+              }
+              seenLeadIds.add(lead.id);
+              newLeadsInBatch++;
+              
               try {
                 // Parse lead data - convert Meta field format to our storage format
                 const fieldData = (lead.field_data || []).map((field: { name: string; values?: string[] }) => ({
@@ -120,10 +184,24 @@ export const syncHistoricalLeads = internalAction({
                 failedLeads++;
               }
             }
+            
+            totalLeads += newLeadsInBatch;
+            formLeadCount += newLeadsInBatch;
+            
+            // If all leads in this batch were duplicates, stop fetching
+            if (newLeadsInBatch === 0) {
+              console.log(`   ⚠️ All leads in batch were duplicates, stopping`);
+              hasMore = false;
+              break;
+            }
 
-            // Check if there are more leads to fetch
+            // Update cursor for next iteration
+            previousCursor = cursor;
             cursor = result.nextCursor;
-            hasMore = !!cursor && leads.length > 0;
+            
+            // Check if there are more leads to fetch
+            // Stop if no cursor or cursor is the same as before
+            hasMore = !!cursor && cursor !== previousCursor;
 
             // Add a small delay to avoid rate limiting
             if (hasMore) {
@@ -135,7 +213,13 @@ export const syncHistoricalLeads = internalAction({
           }
         }
 
-        console.log(`Processed ${formLeadCount} leads from form ${form.name}`);
+        if (batchCount >= MAX_BATCHES) {
+          console.log(`   ⚠️ Reached batch limit (${MAX_BATCHES}). Stopping to prevent infinite loop.`);
+        }
+        if (formLeadCount >= MAX_LEADS_PER_FORM) {
+          console.log(`   ⚠️ Reached maximum leads per form (${MAX_LEADS_PER_FORM}). Stopping.`);
+        }
+        console.log(`   ✅ Processed ${formLeadCount} unique leads from form: ${form.name} (${batchCount} batches)\n`);
       }
 
       // Update sync status to completed
@@ -145,7 +229,15 @@ export const syncHistoricalLeads = internalAction({
         lastSyncedAt: Date.now(),
       });
 
-      console.log(`Historical sync completed: ${processedLeads}/${totalLeads} leads processed, ${failedLeads} failed`);
+      console.log("=" .repeat(60));
+      console.log(`🎉 HISTORICAL SYNC COMPLETED`);
+      console.log(`📊 Summary:`);
+      console.log(`   Total forms processed: ${forms.length}`);
+      console.log(`   Total leads found: ${totalLeads}`);
+      console.log(`   Successfully processed: ${processedLeads}`);
+      console.log(`   Failed to process: ${failedLeads}`);
+      console.log(`   Success rate: ${totalLeads > 0 ? ((processedLeads / totalLeads) * 100).toFixed(1) : 0}%`);
+      console.log("=" .repeat(60));
 
       return {
         success: true,

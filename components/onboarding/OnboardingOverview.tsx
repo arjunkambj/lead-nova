@@ -63,11 +63,11 @@ export default function OnboardingOverview() {
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-4">
-        <Card className="border border-success-200 bg-success-50/50 dark:bg-success-100/10">
+        <Card className="border border-success-200 bg-success-50 dark:bg-success-100">
           <CardBody className="gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-success-100 dark:bg-success-200/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-success-100 dark:bg-success-200 flex items-center justify-center">
                   <Icon
                     icon="solar:buildings-bold"
                     width={20}
@@ -95,14 +95,14 @@ export default function OnboardingOverview() {
         <Card
           className={
             invitedMembers.length > 0
-              ? "border border-success-200 bg-success-50/50 dark:bg-success-100/10"
+              ? "border border-success-200 bg-success-50 dark:bg-success-100"
               : ""
           }
         >
           <CardBody className="gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-200/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-200 flex items-center justify-center">
                   <Icon
                     icon="solar:users-group-two-rounded-bold"
                     width={20}

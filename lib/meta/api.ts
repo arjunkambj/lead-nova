@@ -96,18 +96,201 @@ export class MetaGraphAPI {
   }
 
   /**
-   * Get user's pages
+   * Get user's pages (direct pages only)
    */
   async getUserPages(): Promise<MetaPage[]> {
     const response = await this.client.get<MetaApiResponse<MetaPage[]>>(
       "/me/accounts",
       {
         params: {
-          fields: "id,name,access_token,category,picture",
+          fields: "id,name,access_token,category,picture,tasks",
         },
       }
     );
     return response.data.data || [];
+  }
+
+  /**
+   * Get user's Business Manager pages
+   */
+  async getBusinessPages(): Promise<MetaPage[]> {
+    try {
+      // First, get the user's businesses
+      const businessResponse = await this.client.get<MetaApiResponse<Array<{ id: string; name: string }>>>(
+        "/me/businesses",
+        {
+          params: {
+            fields: "id,name",
+          },
+        }
+      );
+      
+      const businesses = businessResponse.data.data || [];
+      
+      if (businesses.length === 0) {
+        return [];
+      }
+      
+      const allPages: MetaPage[] = [];
+      
+      // For each business, get owned pages and client pages
+      for (const business of businesses) {
+        try {
+          // Try owned pages
+          const ownedPagesResponse = await this.client.get<MetaApiResponse<MetaPage[]>>(
+            `/${business.id}/owned_pages`,
+            {
+              params: {
+                fields: "id,name,access_token,category,picture,tasks",
+              },
+            }
+          );
+          const ownedPages = ownedPagesResponse.data.data || [];
+          allPages.push(...ownedPages);
+        } catch {
+          // Silently continue if owned pages cannot be fetched
+        }
+        
+        try {
+          // Try client pages (pages the business has been granted access to)
+          const clientPagesResponse = await this.client.get<MetaApiResponse<MetaPage[]>>(
+            `/${business.id}/client_pages`,
+            {
+              params: {
+                fields: "id,name,access_token,category,picture,tasks",
+              },
+            }
+          );
+          const clientPages = clientPagesResponse.data.data || [];
+          allPages.push(...clientPages);
+        } catch {
+          // Silently continue if client pages cannot be fetched
+        }
+      }
+      
+      // Remove duplicates based on page ID
+      const uniquePages = Array.from(
+        new Map(allPages.map(page => [page.id, page])).values()
+      );
+      
+      return uniquePages;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Get all accessible pages (direct + Business Manager)
+   */
+  async getAllPages(): Promise<MetaPage[]> {
+    // Fetch both in parallel
+    const [directPages, businessPages] = await Promise.all([
+      this.getUserPages().catch(() => []),
+      this.getBusinessPages().catch(() => [])
+    ]);
+    
+    // Combine and remove duplicates
+    const allPages = [...directPages, ...businessPages];
+    const uniquePages = Array.from(
+      new Map(allPages.map(page => [page.id, page])).values()
+    );
+    
+    return uniquePages;
+  }
+
+  /**
+   * Get user's permissions
+   */
+  async getUserPermissions(): Promise<Array<{ permission: string; status: string }>> {
+    try {
+      const response = await this.client.get<MetaApiResponse<Array<{ permission: string; status: string }>>>(
+        "/me/permissions"
+      );
+      return response.data.data || [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Check if app is in development mode
+   */
+  async getAppInfo(): Promise<{
+    id: string;
+    name?: string;
+    namespace?: string;
+    category?: string;
+    app_type?: number;
+    supports_attribution?: boolean;
+    deployment_status?: 'DEVELOPMENT' | 'LIVE';
+  }> {
+    try {
+      const appId = process.env.NEXT_PUBLIC_META_APP_ID!;
+      const appToken = `${appId}|${process.env.META_APP_SECRET}`;
+      
+      const response = await this.client.get(`/${appId}`, {
+        params: {
+          access_token: appToken,
+          fields: 'id,name,namespace,category,app_type,supports_attribution,deployment_status'
+        }
+      });
+      
+      return response.data;
+    } catch {
+      return {
+        id: process.env.NEXT_PUBLIC_META_APP_ID!,
+        deployment_status: 'DEVELOPMENT' // Default to development if we can't check
+      };
+    }
+  }
+
+  /**
+   * Get detailed debug info for connection issues
+   */
+  async getDebugInfo(): Promise<{
+    user?: MetaUser;
+    permissions: Array<{ permission: string; status: string }>;
+    pages: MetaPage[];
+    appInfo: {
+      id: string;
+      deployment_status?: 'DEVELOPMENT' | 'LIVE';
+    };
+    tokenInfo?: {
+      isValid: boolean;
+      expiresAt?: number;
+      scopes?: string[];
+    };
+  }> {
+    try {
+      const [user, permissions, pages, appInfo] = await Promise.all([
+        this.getMe().catch(() => undefined),
+        this.getUserPermissions(),
+        this.getUserPages(),
+        this.getAppInfo()
+      ]);
+
+      let tokenInfo;
+      if (this.accessToken) {
+        tokenInfo = await this.debugToken(this.accessToken);
+      }
+
+      return {
+        user,
+        permissions,
+        pages,
+        appInfo,
+        tokenInfo
+      };
+    } catch {
+      return {
+        permissions: [],
+        pages: [],
+        appInfo: {
+          id: process.env.NEXT_PUBLIC_META_APP_ID!,
+          deployment_status: 'DEVELOPMENT'
+        }
+      };
+    }
   }
 
   /**
@@ -143,17 +326,23 @@ export class MetaGraphAPI {
    */
   async getFormLeads(
     formId: string,
-    limit: number = META_CONFIG.LEAD_BATCH_SIZE
+    limit: number = META_CONFIG.LEAD_BATCH_SIZE,
+    cursor?: string
   ): Promise<{ leads: MetaLead[]; nextCursor?: string }> {
+    const params: Record<string, string | number> = {
+      fields:
+        "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data",
+      limit,
+    };
+    
+    // Add cursor if provided for pagination
+    if (cursor) {
+      params.after = cursor;
+    }
+    
     const response = await this.client.get<MetaApiResponse<MetaLead[]>>(
       `/${formId}/leads`,
-      {
-        params: {
-          fields:
-            "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data",
-          limit,
-        },
-      }
+      { params }
     );
 
     return {
@@ -238,14 +427,27 @@ export class MetaGraphAPI {
    */
   async subscribePageWebhook(
     pageId: string,
-    callbackUrl: string
+    callbackUrl: string,
+    pageAccessToken?: string
   ): Promise<boolean> {
     try {
+      // Use page access token if provided, otherwise use the instance token
+      const originalToken = this.accessToken;
+      if (pageAccessToken) {
+        this.accessToken = pageAccessToken;
+      }
+      
       await this.client.post(`/${pageId}/subscribed_apps`, {
         subscribed_fields: META_CONFIG.WEBHOOK_FIELDS,
         callback_url: callbackUrl,
         verify_token: META_CONFIG.WEBHOOK_VERIFY_TOKEN,
       });
+      
+      // Restore original token
+      if (pageAccessToken) {
+        this.accessToken = originalToken;
+      }
+      
       return true;
     } catch (error) {
       console.error("Failed to subscribe to webhook:", error);

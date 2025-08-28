@@ -67,7 +67,7 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: BillingCycle }) {
       shadow="none"
       className={`rounded-2xl border ${
         plan.highlight
-          ? "border-primary-200 bg-primary-50/40"
+          ? "border-primary-200 bg-primary-50"
           : "border-divider bg-content1"
       }`}
     >

@@ -14,7 +14,7 @@ interface EmailInputProps {
   label?: string;
 }
 
-export default function EmailInput({
+const EmailInput = React.memo(function EmailInput({
   value,
   onChange,
   isInvalid = false,
@@ -45,4 +45,6 @@ export default function EmailInput({
       onValueChange={onChange}
     />
   );
-}
+});
+
+export default EmailInput;

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { fetchMutation } from "convex/nextjs";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
-import { api } from "@/convex/_generated/api";
 import { createLogger } from "@/lib/logging/Logger";
 import { META_CONFIG } from "@/configs/meta";
 import { getMetaAPI } from "@/lib/meta/api";
@@ -87,86 +85,123 @@ export async function GET(request: NextRequest) {
     try {
       // Get user info
       logger.info("Fetching user information");
-      const userInfo = await metaAPI.getMe();
+      await metaAPI.getMe();
       
-      logger.info("User info retrieved", {
-        id: userInfo.id,
-        name: userInfo.name,
-      });
+      // Check app deployment status and permissions
+      const debugInfo = await metaAPI.getDebugInfo();
       
-      // Get user's pages
-      logger.info("Fetching user pages");
-      const pages = await metaAPI.getUserPages();
-      
-      if (pages.length === 0) {
-        logger.warn("No Facebook pages found for user");
-        return NextResponse.redirect(
-          `${request.nextUrl.origin}/onboarding/meta-connect?error=no_pages`
-        );
-      }
-      
-      // For now, auto-select the first page
-      // TODO: In production, show page selection UI
-      const selectedPage = pages[0];
-      logger.info("Selected page", {
-        pageId: selectedPage.id,
-        pageName: selectedPage.name,
-      });
-      
-      // Store Meta connection in Convex (tokens stored as plain text for now)
-      logger.info("Storing Meta connection in database");
-      const integrationResult = await fetchMutation(
-        api.integration.meta.connectMetaAccount,
-        {
-          pageId: selectedPage.id,
-          pageName: selectedPage.name,
-          pageAccessToken: selectedPage.access_token,
-          userAccessToken: accessToken,
-          tokenExpiresAt: Date.now() + expiresIn * 1000,
-        },
-        { token }
-      );
-      
-      if (!integrationResult.success || !integrationResult.integrationId) {
-        throw new Error("Failed to store integration");
-      }
-      
-      logger.info("Meta connection stored successfully", {
-        integrationId: integrationResult.integrationId,
-      });
-      
-      // Subscribe to webhooks (pointing directly to Convex HTTP endpoint)
-      const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
-      if (convexUrl) {
-        const webhookUrl = `${convexUrl.replace('.convex.cloud', '.convex.site')}/webhook/meta`;
-        logger.info("Subscribing to webhooks", { webhookUrl });
+      // Check if app is in development mode
+      if (debugInfo.appInfo.deployment_status === 'DEVELOPMENT') {
+        // Check if user has granted necessary permissions
+        const grantedPermissions = debugInfo.permissions
+          .filter(p => p.status === 'granted')
+          .map(p => p.permission);
         
-        const subscribed = await metaAPI.subscribePageWebhook(selectedPage.id, webhookUrl);
-        if (!subscribed) {
-          logger.error("Failed to subscribe to webhooks");
-        } else {
-          logger.info("Successfully subscribed to webhooks");
+        const requiredPermissions = ['pages_show_list', 'leads_retrieval'];
+        const missingPermissions = requiredPermissions.filter(
+          p => !grantedPermissions.includes(p)
+        );
+        
+        if (missingPermissions.length > 0) {
+          logger.error("Missing required permissions", { missingPermissions });
+          return NextResponse.redirect(
+            `${request.nextUrl.origin}/onboarding/meta-connect?error=missing_permissions&details=${
+              encodeURIComponent(missingPermissions.join(','))
+            }`
+          );
         }
       }
       
-      // Prepare success URL with page info
-      const successUrl = new URL(`${request.nextUrl.origin}/onboarding/meta-connect`);
-      successUrl.searchParams.set("success", "true");
-      successUrl.searchParams.set("page", selectedPage.name);
-      successUrl.searchParams.set("pageId", selectedPage.id);
+      // Get user's pages - try all methods
+      // First try direct pages
+      const directPages = await metaAPI.getUserPages();
       
-      // Add all pages info for display
-      if (pages.length > 1) {
-        const pagesInfo = pages.map(p => ({
-          id: p.id,
-          name: p.name,
-          selected: p.id === selectedPage.id
-        }));
-        successUrl.searchParams.set("pages", JSON.stringify(pagesInfo));
+      // If no direct pages, try Business Manager pages
+      let pages = directPages;
+      if (directPages.length === 0) {
+        const businessPages = await metaAPI.getBusinessPages();
+        pages = businessPages;
       }
       
-      logger.info("Meta connection complete, redirecting to success page");
-      return NextResponse.redirect(successUrl.toString());
+      // If still no pages, try getting all pages (both direct and business)
+      if (pages.length === 0) {
+        pages = await metaAPI.getAllPages();
+      }
+      
+      if (pages.length === 0) {
+        logger.warn("No Facebook pages found", {
+          isDevelopment: debugInfo.appInfo.deployment_status === 'DEVELOPMENT',
+        });
+        
+        // Provide more specific error message based on app mode
+        const errorDetails = debugInfo.appInfo.deployment_status === 'DEVELOPMENT'
+          ? "No pages found. In dev mode: 1) Add yourself as app tester, 2) Ensure direct page admin access (not just Business Manager), 3) Or create a test page."
+          : "No Facebook pages found. Make sure you have admin access to at least one Facebook Page.";
+        
+        return NextResponse.redirect(
+          `${request.nextUrl.origin}/onboarding/meta-connect?error=no_pages&dev_mode=${
+            debugInfo.appInfo.deployment_status === 'DEVELOPMENT'
+          }&details=${encodeURIComponent(errorDetails)}`
+        );
+      }
+      
+      logger.info("Pages found", { count: pages.length });
+      
+      // Check each page for lead forms count using PAGE access token
+      const pagesWithFormInfo = await Promise.all(
+        pages.map(async (page) => {
+          try {
+            // IMPORTANT: Use the page's access token for leadgen_forms endpoint
+            // In dev mode, leadgen_forms requires page access token, not user token
+            const pageMetaAPI = getMetaAPI(page.access_token);
+            const forms = await pageMetaAPI.getPageLeadForms(page.id);
+            
+            return {
+              ...page,
+              lead_forms_count: forms.length,
+            };
+          } catch (error) {
+            logger.debug("Failed to fetch lead forms", {
+              pageId: page.id,
+              pageName: page.name,
+              error: error instanceof Error ? error.message : "Unknown error"
+            });
+            
+            // In dev mode, we might not be able to fetch forms even if they exist
+            // Add a flag to indicate this might be a dev mode limitation
+            return {
+              ...page,
+              lead_forms_count: 0,
+              lead_forms_error: error instanceof Error ? error.message : "Unknown error",
+              dev_mode_limitation: true,
+            };
+          }
+        })
+      );
+      
+      // Prepare page selection URL with all page data
+      const pageSelectionUrl = new URL(`${request.nextUrl.origin}/onboarding/select-page`);
+      
+      // Pass pages data
+      pageSelectionUrl.searchParams.set("pages", encodeURIComponent(
+        JSON.stringify(pagesWithFormInfo)
+      ));
+      
+      // Pass tokens for later use
+      const tokens = {
+        userAccessToken: accessToken,
+        tokenExpiresAt: Date.now() + expiresIn * 1000,
+      };
+      pageSelectionUrl.searchParams.set("tokens", encodeURIComponent(
+        JSON.stringify(tokens)
+      ));
+      
+      logger.info("Redirecting to page selection", {
+        pageCount: pages.length,
+        pagesWithForms: pagesWithFormInfo.filter(p => p.lead_forms_count > 0).length,
+      });
+      
+      return NextResponse.redirect(pageSelectionUrl.toString());
       
     } catch (apiError) {
       logger.error("Meta API error", apiError as Error);
