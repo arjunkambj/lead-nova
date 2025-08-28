@@ -27,9 +27,7 @@ export default function OrganizationForm() {
   const onboardingStatus = useOnboardingStatus();
   const user = useCurrentUser();
 
-  // Handle form data population - only once on initial load
   useEffect(() => {
-    // Only populate form once when organization data is first available
     if (onboardingStatus?.organization && !hasInitialized.current) {
       hasInitialized.current = true;
       setIsEditMode(true);
@@ -66,7 +64,6 @@ export default function OrganizationForm() {
       newErrors.name = "Name must be at least 2 characters";
     }
 
-    // Validate mobile number if provided
     if (mobileNumber && !/^[+]?[\d\s()-]+$/.test(mobileNumber)) {
       newErrors.mobileNumber = "Please enter a valid mobile number";
     }
@@ -116,78 +113,55 @@ export default function OrganizationForm() {
     }
   }, [validateForm, createOrganization, name, mobileNumber, operatingCity, isEditMode, router]);
 
-  // Unified loading state - check after all hooks are defined
   const isLoading = useMemo(() => !user, [user]);
   
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
+      <div className="flex h-48 items-center justify-center">
         <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4">
-        <div>
-          <label className="text-sm font-medium text-default-700 mb-2 block">
-            Name <span className="text-danger">*</span>
-          </label>
-          <Input
-            placeholder="Acme Inc."
-            value={name}
-            onValueChange={handleNameChange}
-            isInvalid={!!errors.name}
-            errorMessage={errors.name}
-            description="This is the name that will be displayed to your team members."
-            isRequired
-            classNames={{
-              input: "text-sm",
-              description: "text-xs",
-            }}
-          />
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-md">
+      <Input
+        label="Organization Name"
+        placeholder="Acme Inc."
+        value={name}
+        onValueChange={handleNameChange}
+        isInvalid={!!errors.name}
+        errorMessage={errors.name}
+        isRequired
+        variant="flat"
+        size="lg"
+      />
 
-        <div>
-          <label className="text-sm font-medium text-default-700 mb-2 block">
-            Mobile Number
-          </label>
-          <Input
-            placeholder="+1 (555) 123-4567"
-            value={mobileNumber}
-            onValueChange={handleMobileNumberChange}
-            isInvalid={!!errors.mobileNumber}
-            errorMessage={errors.mobileNumber}
-            description="Contact number for your organization (optional)."
-            classNames={{
-              input: "text-sm",
-              description: "text-xs",
-            }}
-          />
-        </div>
+      <Input
+        label="Mobile Number"
+        placeholder="+1 (555) 123-4567"
+        value={mobileNumber}
+        onValueChange={handleMobileNumberChange}
+        isInvalid={!!errors.mobileNumber}
+        errorMessage={errors.mobileNumber}
+        variant="flat"
+        size="lg"
+      />
 
-        <div>
-          <label className="text-sm font-medium text-default-700 mb-2 block">
-            Operating City
-          </label>
-          <Input
-            placeholder="New York"
-            value={operatingCity}
-            onValueChange={setOperatingCity}
-            description="Primary city where your organization operates (optional)."
-            classNames={{
-              input: "text-sm",
-              description: "text-xs",
-            }}
-          />
-        </div>
-      </div>
+      <Input
+        label="Operating City"
+        placeholder="New York"
+        value={operatingCity}
+        onValueChange={setOperatingCity}
+        variant="flat"
+        size="lg"
+      />
 
       <Button
         type="submit"
         color="primary"
-        className="w-full mt-4"
+        className="w-full"
+        size="lg"
         isLoading={isSubmitting}
       >
         {isEditMode ? "Update & Continue" : "Create Organization"}

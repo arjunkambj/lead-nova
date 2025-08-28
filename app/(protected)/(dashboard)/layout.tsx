@@ -14,16 +14,15 @@ export default async function AppLayout({
         redirectTo="/onboarding/create-organization"
       />
 
-      <div className="flex h-screen w-full bg-background py-3">
-        <aside className="h-full">
+      <div className="flex h-screen w-full bg-background">
+        <aside className="h-full border-r border-default-200">
           <DashboardSidebar />
         </aside>
         <main className="flex flex-col min-w-0 w-full">
-          <section className="flex-1 py-4 px-6 overflow-auto">
+          <section className="flex-1 px-8 py-6 overflow-auto">
             {children}
           </section>
         </main>
-        {/* Floating Agent Mode Button */}
       </div>
     </>
   );

@@ -56,10 +56,8 @@ const UserProfile = React.memo(() => {
     <Dropdown placement="bottom-end">
       <DropdownTrigger>
         <Avatar
-          isBordered
           as="button"
           className="transition-transform"
-          color="primary"
           name={userName}
           size="sm"
           src={userImage || undefined}

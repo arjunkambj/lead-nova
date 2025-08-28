@@ -36,8 +36,8 @@ const SidebarDirectItems: React.FC<SidebarDirectItemsProps> = ({ items }) => {
               "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 min-h-9",
               "no-underline w-full",
               isActive
-                ? "bg-primary text-white font-medium shadow-sm"
-                : "text-default-800 hover:text-default-900 hover:bg-default-200"
+                ? "bg-primary/10 text-primary font-medium"
+                : "text-default-600 hover:text-default-900 hover:bg-default-100"
             )}
             href={item.href as Route}
             prefetch={true}

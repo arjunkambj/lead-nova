@@ -3,7 +3,6 @@
 import React from "react";
 import { Button, Input, Select, SelectItem, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { AnimatePresence, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { addToast } from "@heroui/react";
 import { useInviteTeamMembers } from "@/hooks/useOrganization";
@@ -37,11 +36,9 @@ export default function TeamInviteForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
 
-  // No redirect logic here - handled by OnboardingRedirect component
-
   if (!onboardingStatus || !user) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
+      <div className="flex h-48 items-center justify-center">
         <Spinner size="lg" />
       </div>
     );
@@ -130,7 +127,7 @@ export default function TeamInviteForm() {
       });
 
       if (result.success) {
-        await updateOnboardingStep({ step: 4 }); // Update to step 4 after completing step 3
+        await updateOnboardingStep({ step: 4 });
 
         if (result.failed.length > 0) {
           addToast({
@@ -166,7 +163,7 @@ export default function TeamInviteForm() {
   const handleSkip = async () => {
     setIsLoading(true);
     try {
-      await updateOnboardingStep({ step: 4 }); // Update to step 4 when skipping step 3
+      await updateOnboardingStep({ step: 4 });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.push("/onboarding/overview" as any);
     } catch {
@@ -181,88 +178,81 @@ export default function TeamInviteForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className={`flex flex-col gap-3 ${members.length > 5 ? 'max-h-[400px] overflow-y-auto pr-2 custom-scrollbar' : ''}`}>
-        <AnimatePresence mode="popLayout">
-          {members.map((member) => (
-            <m.div
-              key={member.id}
-              layout
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9, height: 0 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="flex gap-2 items-start shrink-0"
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
+      <div className="space-y-3">
+        {members.map((member, index) => (
+          <div key={member.id} className="flex gap-2">
+            <Input
+              placeholder="email@example.com"
+              value={member.email}
+              onValueChange={(value) =>
+                updateMember(member.id, "email", value)
+              }
+              isInvalid={!!errors[member.id]}
+              errorMessage={errors[member.id]}
+              className="flex-1"
+              variant="flat"
+              size="lg"
+              autoFocus={index === 0}
+            />
+            <Select
+              selectedKeys={[member.role]}
+              onSelectionChange={(keys) => {
+                const value = Array.from(keys)[0] as string;
+                updateMember(member.id, "role", value);
+              }}
+              className="w-40"
+              size="lg"
+              variant="flat"
             >
-              <Input
-                placeholder="email@example.com"
-                value={member.email}
-                onValueChange={(value) =>
-                  updateMember(member.id, "email", value)
-                }
-                isInvalid={!!errors[member.id]}
-                errorMessage={errors[member.id]}
-                className="flex-1"
-                classNames={{
-                  input: "text-sm",
-                }}
-              />
-              <Select
-                selectedKeys={[member.role]}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0] as string;
-                  updateMember(member.id, "role", value);
-                }}
-                className="w-32"
-                classNames={{
-                  trigger: "h-10",
-                }}
+              {roles.map((role) => (
+                <SelectItem key={role.value}>{role.label}</SelectItem>
+              ))}
+            </Select>
+            {members.length > 1 && (
+              <Button
+                isIconOnly
+                size="lg"
+                variant="flat"
+                onPress={() => removeMember(member.id)}
               >
-                {roles.map((role) => (
-                  <SelectItem key={role.value}>{role.label}</SelectItem>
-                ))}
-              </Select>
-              {members.length > 1 && (
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="flat"
-                  onPress={() => removeMember(member.id)}
-                  className="min-w-10"
-                >
-                  <Icon icon="solar:trash-bin-minimalistic-linear" width={16} />
-                </Button>
-              )}
-            </m.div>
-          ))}
-        </AnimatePresence>
+                <Icon icon="solar:trash-bin-minimalistic-linear" width={18} />
+              </Button>
+            )}
+          </div>
+        ))}
       </div>
 
-      <Button
-        variant="flat"
-        startContent={<Icon icon="solar:add-circle-linear" width={18} />}
-        onPress={addMember}
-        className="w-full"
-      >
-        Add member
-      </Button>
+      {members.length < 5 && (
+        <Button
+          variant="flat"
+          startContent={<Icon icon="solar:add-circle-linear" width={18} />}
+          onPress={addMember}
+          className="w-full"
+          size="lg"
+        >
+          Add another
+        </Button>
+      )}
 
-      <div className="flex gap-2 mt-4">
+      <div className="flex gap-3 pt-4">
         <Button
           variant="flat"
           className="flex-1"
           onPress={handleSkip}
           isDisabled={isLoading}
+          size="lg"
         >
-          Skip
+          Skip for now
         </Button>
         <Button
           type="submit"
           color="primary"
           className="flex-1"
           isLoading={isLoading}
+          size="lg"
         >
-          Invite Team
+          Send Invites
         </Button>
       </div>
     </form>

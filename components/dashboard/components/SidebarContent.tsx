@@ -26,9 +26,9 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
 
   const containerClasses = useMemo(
     () =>
-      `relative flex h-full max-w-[280px] flex-1 flex-col bg-content1 rounded-2xl border border-divider transition-all duration-300 ease-in-out ${
+      `relative flex h-full max-w-[260px] flex-1 flex-col bg-background transition-all duration-300 ease-in-out ${
         isOpen
-          ? "w-[280px] p-6 opacity-100 overflow-visible ml-4"
+          ? "w-[260px] p-5 opacity-100 overflow-visible"
           : "w-0 p-0 opacity-0 overflow-hidden"
       }`,
     [isOpen]
@@ -37,7 +37,7 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
   const scrollShadowClasses = useMemo(
     () =>
       `h-full max-h-full transition-all duration-300 ${
-        isOpen ? "-mr-6 pr-6 opacity-100" : "opacity-0"
+        isOpen ? "-mr-5 pr-5 opacity-100" : "opacity-0"
       }`,
     [isOpen]
   );
@@ -48,18 +48,18 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
 
   const logoSection = useMemo(
     () => (
-      <div className="flex items-center justify-between px-2 py-2">
+      <div className="flex items-center justify-between mb-2">
         <Logo />
         {/* Close button - only visible on mobile */}
         <Button
           isIconOnly
           aria-label="Close sidebar"
-          className="sm:hidden absolute right-2 top-2"
+          className="sm:hidden"
           size="sm"
           variant="light"
           onPress={handleCloseClick}
         >
-          <Icon icon="solar:close-circle-bold" width={20} />
+          <Icon icon="solar:close-circle-linear" width={20} />
         </Button>
       </div>
     ),
@@ -94,10 +94,10 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
   return (
     <div className={containerClasses}>
       {/* Logo and Close Button */}
-      <div className="mb-4">{logoSection}</div>
+      {logoSection}
 
       {/* Direct Navigation Items */}
-      <div className="mb-4">{directItemsContent}</div>
+      <div className="mb-6 mt-4">{directItemsContent}</div>
 
       {/* Category Navigation */}
       <div className="flex-1 min-h-0">
@@ -107,7 +107,7 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
       </div>
 
       {/* Footer Items */}
-      <div className="mt-auto pt-6 border-t border-divider">
+      <div className="mt-auto pt-4 border-t border-default-200">
         {footerItemsContent}
       </div>
     </div>
