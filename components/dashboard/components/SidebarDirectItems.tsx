@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import type { Route } from "next";
-import { usePathname } from "next/navigation";
-import { Icon } from "@iconify/react";
 import { cn } from "@heroui/theme";
+import { Icon } from "@iconify/react";
+import type { Route } from "next";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type React from "react";
 
 type DirectItem = {
   key: string;
@@ -37,7 +37,7 @@ const SidebarDirectItems: React.FC<SidebarDirectItemsProps> = ({ items }) => {
               "no-underline w-full",
               isActive
                 ? "bg-primary/10 text-primary font-medium"
-                : "text-default-600 hover:text-default-900 hover:bg-default-100"
+                : "text-default-600 hover:text-default-900 hover:bg-default-100",
             )}
             href={item.href as Route}
             prefetch={true}

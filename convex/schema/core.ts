@@ -21,8 +21,8 @@ export const users = defineTable({
       v.literal("manager"),
       v.literal("member"),
       v.literal("superAdmin"),
-      v.literal("oppsDev")
-    )
+      v.literal("oppsDev"),
+    ),
   ),
 
   status: v.optional(
@@ -32,8 +32,8 @@ export const users = defineTable({
       v.literal("invited"),
       v.literal("suspended"),
       v.literal("deleted"),
-      v.literal("expired")
-    )
+      v.literal("expired"),
+    ),
   ),
 
   ///// Invitation fields

@@ -1,7 +1,7 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { Icon } from "@iconify/react";
+import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 export function ThemeSwitch() {
@@ -19,6 +19,7 @@ export function ThemeSwitch() {
   return (
     <div className="fixed bottom-5 right-5 z-50">
       <button
+        type="button"
         aria-label="Toggle theme"
         className="group relative flex items-center justify-center bg-default-50/70 dark:bg-content1/70 backdrop-blur-md rounded-full w-11 h-11 border border-divider/50 shadow-[0_4px_14px_rgba(0,0,0,0.06)] dark:shadow-[0_6px_20px_rgba(0,0,0,0.25)] transition-all duration-200 hover:border-primary/30 hover:shadow-[0_6px_18px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_26px_rgba(0,0,0,0.32)]"
         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

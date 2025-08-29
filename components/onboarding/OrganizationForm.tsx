@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useCallback, useMemo } from "react";
-import { Button, Input, Spinner } from "@heroui/react";
+import { addToast, Button, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   useCreateOrganization,
   useOnboardingStatus,
@@ -16,9 +15,9 @@ export default function OrganizationForm() {
   const [mobileNumber, setMobileNumber] = React.useState("");
   const [operatingCity, setOperatingCity] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [errors, setErrors] = React.useState<{ 
-    name?: string; 
-    mobileNumber?: string; 
+  const [errors, setErrors] = React.useState<{
+    name?: string;
+    mobileNumber?: string;
   }>({});
   const [isEditMode, setIsEditMode] = React.useState(false);
   const hasInitialized = useRef(false);
@@ -41,19 +40,25 @@ export default function OrganizationForm() {
     }
   }, [onboardingStatus?.organization]);
 
-  const handleNameChange = useCallback((value: string) => {
-    setName(value);
-    if (errors.name) {
-      setErrors(prev => ({ ...prev, name: undefined }));
-    }
-  }, [errors.name]);
+  const handleNameChange = useCallback(
+    (value: string) => {
+      setName(value);
+      if (errors.name) {
+        setErrors((prev) => ({ ...prev, name: undefined }));
+      }
+    },
+    [errors.name],
+  );
 
-  const handleMobileNumberChange = useCallback((value: string) => {
-    setMobileNumber(value);
-    if (errors.mobileNumber) {
-      setErrors(prev => ({ ...prev, mobileNumber: undefined }));
-    }
-  }, [errors.mobileNumber]);
+  const handleMobileNumberChange = useCallback(
+    (value: string) => {
+      setMobileNumber(value);
+      if (errors.mobileNumber) {
+        setErrors((prev) => ({ ...prev, mobileNumber: undefined }));
+      }
+    },
+    [errors.mobileNumber],
+  );
 
   const validateForm = useCallback(() => {
     const newErrors: { name?: string; mobileNumber?: string } = {};
@@ -72,49 +77,59 @@ export default function OrganizationForm() {
     return Object.keys(newErrors).length === 0;
   }, [name, mobileNumber]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const result = await createOrganization({
-        name: name.trim(),
-        mobileNumber: mobileNumber.trim() || undefined,
-        operatingCity: operatingCity.trim() || undefined,
-      });
-
-      if (result.success) {
-        addToast({
-          title: isEditMode ? "Organization updated" : "Organization created",
-          description: isEditMode 
-            ? "Your organization has been updated successfully"
-            : "Your organization has been created successfully",
-          color: "success",
-        });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        router.push("/onboarding/meta-connect" as any);
+      if (!validateForm()) {
+        return;
       }
-    } catch (error) {
-      addToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to create organization",
-        color: "danger",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [validateForm, createOrganization, name, mobileNumber, operatingCity, isEditMode, router]);
+
+      setIsSubmitting(true);
+
+      try {
+        const result = await createOrganization({
+          name: name.trim(),
+          mobileNumber: mobileNumber.trim() || undefined,
+          operatingCity: operatingCity.trim() || undefined,
+        });
+
+        if (result.success) {
+          addToast({
+            title: isEditMode ? "Organization updated" : "Organization created",
+            description: isEditMode
+              ? "Your organization has been updated successfully"
+              : "Your organization has been created successfully",
+            color: "success",
+          });
+          router.push("/onboarding/meta-connect");
+        }
+      } catch (error) {
+        addToast({
+          title: "Error",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Failed to create organization",
+          color: "danger",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      validateForm,
+      createOrganization,
+      name,
+      mobileNumber,
+      operatingCity,
+      isEditMode,
+      router,
+    ],
+  );
 
   const isLoading = useMemo(() => !user, [user]);
-  
+
   if (isLoading) {
     return (
       <div className="flex h-48 items-center justify-center">

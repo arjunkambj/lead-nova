@@ -1,17 +1,14 @@
-import { convexAuth } from "@convex-dev/auth/server";
 import Google from "@auth/core/providers/google";
-import { ResendOTP } from "./helpers/ResendOTP";
+import { convexAuth } from "@convex-dev/auth/server";
 import {
+  createOrganizationForUser,
   handleExistingUser,
   shouldCreateOrganization,
-  createOrganizationForUser,
 } from "./helpers/auth";
+import { ResendOTP } from "./helpers/ResendOTP";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [
-    Google,
-    ResendOTP,
-  ],
+  providers: [Google, ResendOTP],
   callbacks: {
     async createOrUpdateUser(ctx, args) {
       return await handleExistingUser(ctx, args.existingUserId, args.profile);

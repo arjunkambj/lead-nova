@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
 import { InputOtp } from "@heroui/react";
 import Link from "next/link";
+import React from "react";
 
 interface OtpInputProps {
   value: string;

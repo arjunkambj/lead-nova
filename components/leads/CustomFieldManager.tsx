@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
 import {
-  Input,
-  Select,
-  SelectItem,
   Button,
-  Switch,
   Card,
   CardBody,
   Divider,
+  Input,
+  Select,
+  SelectItem,
+  Switch,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { useState } from "react";
+import type { Doc } from "@/convex/_generated/dataModel";
 import { useCustomFields } from "@/hooks/useLeads";
-import { Doc } from "@/convex/_generated/dataModel";
 
 interface CustomFieldManagerProps {
   onClose: () => void;
@@ -55,12 +55,7 @@ export function CustomFieldManager({ onClose }: CustomFieldManagerProps) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Custom Fields</h3>
-        <Button
-          size="sm"
-          variant="light"
-          onPress={onClose}
-          isIconOnly
-        >
+        <Button size="sm" variant="light" onPress={onClose} isIconOnly>
           <Icon icon="solar:close-circle-linear" className="text-xl" />
         </Button>
       </div>
@@ -79,20 +74,20 @@ export function CustomFieldManager({ onClose }: CustomFieldManagerProps) {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <Icon 
-                      icon="solar:list-linear" 
-                      className={field.showInTable ? "text-primary" : "text-default-300"}
+                    <Icon
+                      icon="solar:list-linear"
+                      className={
+                        field.showInTable ? "text-primary" : "text-default-300"
+                      }
                     />
-                    <Icon 
-                      icon="solar:widget-4-linear" 
-                      className={field.showInKanban ? "text-primary" : "text-default-300"}
+                    <Icon
+                      icon="solar:widget-4-linear"
+                      className={
+                        field.showInKanban ? "text-primary" : "text-default-300"
+                      }
                     />
                   </div>
-                  <Button
-                    size="sm"
-                    variant="light"
-                    isIconOnly
-                  >
+                  <Button size="sm" variant="light" isIconOnly>
                     <Icon icon="solar:settings-linear" />
                   </Button>
                 </div>
@@ -118,12 +113,14 @@ export function CustomFieldManager({ onClose }: CustomFieldManagerProps) {
         <Card>
           <CardBody className="space-y-4">
             <h4 className="font-medium">New Custom Field</h4>
-            
+
             <Input
               label="Field Name"
               placeholder="e.g., budget"
               value={newField.name}
-              onChange={(e) => setNewField({ ...newField, name: e.target.value })}
+              onChange={(e) =>
+                setNewField({ ...newField, name: e.target.value })
+              }
               description="Unique identifier for the field (no spaces)"
               variant="bordered"
             />
@@ -132,7 +129,9 @@ export function CustomFieldManager({ onClose }: CustomFieldManagerProps) {
               label="Display Label"
               placeholder="e.g., Budget Range"
               value={newField.label}
-              onChange={(e) => setNewField({ ...newField, label: e.target.value })}
+              onChange={(e) =>
+                setNewField({ ...newField, label: e.target.value })
+              }
               description="Label shown to users"
               variant="bordered"
             />
@@ -140,7 +139,9 @@ export function CustomFieldManager({ onClose }: CustomFieldManagerProps) {
             <Select
               label="Field Type"
               selectedKeys={[newField.fieldType]}
-              onChange={(e) => setNewField({ ...newField, fieldType: e.target.value })}
+              onChange={(e) =>
+                setNewField({ ...newField, fieldType: e.target.value })
+              }
               variant="bordered"
             >
               <SelectItem key="text">Text</SelectItem>
@@ -160,19 +161,25 @@ export function CustomFieldManager({ onClose }: CustomFieldManagerProps) {
             <div className="space-y-2">
               <Switch
                 isSelected={newField.required}
-                onValueChange={(value) => setNewField({ ...newField, required: value })}
+                onValueChange={(value) =>
+                  setNewField({ ...newField, required: value })
+                }
               >
                 Required field
               </Switch>
               <Switch
                 isSelected={newField.showInTable}
-                onValueChange={(value) => setNewField({ ...newField, showInTable: value })}
+                onValueChange={(value) =>
+                  setNewField({ ...newField, showInTable: value })
+                }
               >
                 Show in table view
               </Switch>
               <Switch
                 isSelected={newField.showInKanban}
-                onValueChange={(value) => setNewField({ ...newField, showInKanban: value })}
+                onValueChange={(value) =>
+                  setNewField({ ...newField, showInKanban: value })
+                }
               >
                 Show in kanban cards
               </Switch>

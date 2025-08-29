@@ -1,7 +1,12 @@
-import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { query, mutation, QueryCtx, MutationCtx } from "../_generated/server";
-import { Doc, Id } from "../_generated/dataModel";
+import { v } from "convex/values";
+import type { Doc, Id } from "../_generated/dataModel";
+import {
+  type MutationCtx,
+  mutation,
+  type QueryCtx,
+  query,
+} from "../_generated/server";
 
 // Helper function to check if user is admin
 async function isUserAdmin(ctx: QueryCtx | MutationCtx, userId: Id<"users">) {
@@ -144,7 +149,7 @@ export const cancelInvite = mutation({
     const organization = await ctx.db.get(admin.organizationId);
     if (organization) {
       const updatedMembers = organization.members.filter(
-        (id) => id !== args.invitedUserId
+        (id) => id !== args.invitedUserId,
       );
       await ctx.db.patch(admin.organizationId, {
         members: updatedMembers,
@@ -210,12 +215,13 @@ export const getInvitedUsers = query({
 
     const user = await ctx.db.get(userId);
     if (!user || !user.organizationId) return [];
+    const organizationId = user.organizationId;
 
     // Get all invited users for the organization
     const invitedUsers = await ctx.db
       .query("users")
       .withIndex("byOrganizationAndStatus", (q) =>
-        q.eq("organizationId", user.organizationId!).eq("status", "invited")
+        q.eq("organizationId", organizationId).eq("status", "invited"),
       )
       .collect();
 
@@ -230,7 +236,7 @@ export const getInvitedUsers = query({
           inviterName: inviter?.name || "Unknown",
           inviterEmail: inviter?.email || "Unknown",
         };
-      })
+      }),
     );
 
     return invitedUsersWithDetails;
@@ -293,7 +299,7 @@ export const getOrganizationWithMembers = query({
       organization.members.map(async (memberId) => {
         const member = await ctx.db.get(memberId);
         return member;
-      })
+      }),
     );
 
     // Filter out null members and categorize by status
@@ -315,7 +321,7 @@ export const inviteTeamMembers = mutation({
       v.object({
         email: v.string(),
         role: v.union(v.literal("manager"), v.literal("member")),
-      })
+      }),
     ),
     expiresInDays: v.optional(v.number()),
   },
@@ -326,7 +332,7 @@ export const inviteTeamMembers = mutation({
       v.object({
         email: v.string(),
         reason: v.string(),
-      })
+      }),
     ),
   }),
   handler: async (ctx, args) => {

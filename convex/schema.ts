@@ -1,16 +1,16 @@
-import { defineSchema } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
-import { users, organizations, onboarding } from "./schema/core";
-import { 
-  metaIntegrations, 
-  leads, 
-  leadSyncJobs, 
-  metaWebhookEvents, 
+import { defineSchema } from "convex/server";
+import { onboarding, organizations, users } from "./schema/core";
+import {
+  leadActivities,
   leadCustomFields,
   leadStages,
+  leadSyncJobs,
+  leads,
   leadTags,
-  leadActivities,
-  leadViews
+  leadViews,
+  metaIntegrations,
+  metaWebhookEvents,
 } from "./schema/meta";
 
 const schema = defineSchema({

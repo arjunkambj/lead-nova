@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { Doc } from "../_generated/dataModel";
+import type { Doc } from "../_generated/dataModel";
+import { mutation, query } from "../_generated/server";
 
 ///// Get Current Authenticated User
 export const getCurrentUser = query({
@@ -26,8 +26,8 @@ export const getCurrentUser = query({
           v.literal("manager"),
           v.literal("member"),
           v.literal("superAdmin"),
-          v.literal("oppsDev")
-        )
+          v.literal("oppsDev"),
+        ),
       ),
       status: v.optional(
         v.union(
@@ -36,8 +36,8 @@ export const getCurrentUser = query({
           v.literal("invited"),
           v.literal("suspended"),
           v.literal("deleted"),
-          v.literal("expired")
-        )
+          v.literal("expired"),
+        ),
       ),
       invitedBy: v.optional(v.id("users")),
       invitedAt: v.optional(v.number()),
@@ -47,7 +47,7 @@ export const getCurrentUser = query({
       lastLoginAt: v.optional(v.number()),
       createdAt: v.optional(v.number()),
       updatedAt: v.optional(v.number()),
-    })
+    }),
   ),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
@@ -71,7 +71,7 @@ export const resetEverything = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user) throw new Error("User not found");
 
     const organizationId = user.organizationId;
@@ -83,9 +83,11 @@ export const resetEverything = mutation({
       // 1. Delete all leads for the organization
       const leads = await ctx.db
         .query("leads")
-        .withIndex("byOrganization", (q) => q.eq("organizationId", organizationId))
+        .withIndex("byOrganization", (q) =>
+          q.eq("organizationId", organizationId),
+        )
         .collect();
-      
+
       for (const lead of leads) {
         await ctx.db.delete(lead._id);
       }
@@ -94,9 +96,11 @@ export const resetEverything = mutation({
       // 2. Delete all lead sync jobs
       const syncJobs = await ctx.db
         .query("leadSyncJobs")
-        .withIndex("byOrganization", (q) => q.eq("organizationId", organizationId))
+        .withIndex("byOrganization", (q) =>
+          q.eq("organizationId", organizationId),
+        )
         .collect();
-      
+
       for (const job of syncJobs) {
         await ctx.db.delete(job._id);
       }
@@ -105,9 +109,11 @@ export const resetEverything = mutation({
       // 3. Delete all Meta integrations
       const metaIntegrations = await ctx.db
         .query("metaIntegrations")
-        .withIndex("byOrganization", (q) => q.eq("organizationId", organizationId))
+        .withIndex("byOrganization", (q) =>
+          q.eq("organizationId", organizationId),
+        )
         .collect();
-      
+
       for (const integration of metaIntegrations) {
         await ctx.db.delete(integration._id);
       }
@@ -118,7 +124,7 @@ export const resetEverything = mutation({
         .query("onboarding")
         .withIndex("byUser", (q) => q.eq("userId", userId))
         .collect();
-      
+
       for (const record of onboardingRecords) {
         await ctx.db.delete(record._id);
       }
@@ -140,14 +146,17 @@ export const resetEverything = mutation({
       }
 
       console.log(`Successfully reset all data for user ${userId}`);
-      
+
       return {
         success: true,
-        message: "All data has been reset successfully. You can start fresh now.",
+        message:
+          "All data has been reset successfully. You can start fresh now.",
       };
     } catch (error) {
       console.error("Failed to reset user data:", error);
-      throw new Error(error instanceof Error ? error.message : "Failed to reset data");
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to reset data",
+      );
     }
   },
 });

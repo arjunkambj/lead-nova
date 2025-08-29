@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Link } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
@@ -11,7 +10,7 @@ const footerSections = [
   {
     title: "Quick Links",
     links: footerNavigation.main.filter(
-      (item) => item.name !== "Features" && item.name !== "Integrations"
+      (item) => item.name !== "Features" && item.name !== "Integrations",
     ),
   },
   {

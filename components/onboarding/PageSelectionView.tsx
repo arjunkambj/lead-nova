@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button, Avatar, Chip, Spinner } from "@heroui/react";
+import {
+  Avatar,
+  Button,
+  Chip,
+  Radio,
+  RadioGroup,
+  Spinner,
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useConnectMetaPage } from "@/hooks/useMeta";
 
@@ -24,7 +31,7 @@ export default function PageSelectionView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const connectMetaPage = useConnectMetaPage();
-  
+
   const [pages, setPages] = useState<PageInfo[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string>("");
   const [isConnecting, setIsConnecting] = useState(false);
@@ -36,12 +43,12 @@ export default function PageSelectionView() {
   useEffect(() => {
     const pagesParam = searchParams.get("pages");
     const tokensParam = searchParams.get("tokens");
-    
+
     if (pagesParam) {
       try {
         const parsedPages = JSON.parse(decodeURIComponent(pagesParam));
         setPages(parsedPages);
-        
+
         // Pre-select first page if only one available
         if (parsedPages.length === 1) {
           setSelectedPageId(parsedPages[0].id);
@@ -55,7 +62,7 @@ export default function PageSelectionView() {
       toast.error("No pages data found. Please reconnect.");
       router.push("/onboarding/meta-connect");
     }
-    
+
     if (tokensParam) {
       try {
         const parsedTokens = JSON.parse(decodeURIComponent(tokensParam));
@@ -72,7 +79,7 @@ export default function PageSelectionView() {
       return;
     }
 
-    const selectedPage = pages.find(p => p.id === selectedPageId);
+    const selectedPage = pages.find((p) => p.id === selectedPageId);
     if (!selectedPage || !tokens) {
       toast.error("Missing required data. Please reconnect.");
       router.push("/onboarding/meta-connect");
@@ -80,7 +87,7 @@ export default function PageSelectionView() {
     }
 
     setIsConnecting(true);
-    
+
     try {
       const result = await connectMetaPage({
         pageId: selectedPage.id,
@@ -93,17 +100,22 @@ export default function PageSelectionView() {
 
       if (result.success && result.integrationId) {
         toast.success(`Successfully connected ${selectedPage.name}`);
-        
+
         const pageData = {
           pageId: selectedPage.id,
           pageName: selectedPage.name,
           pageAccessToken: selectedPage.access_token,
           integrationId: result.integrationId,
         };
-        
-        const formSelectionUrl = new URL(`${window.location.origin}/onboarding/select-forms`);
-        formSelectionUrl.searchParams.set("pageData", encodeURIComponent(JSON.stringify(pageData)));
-        
+
+        const formSelectionUrl = new URL(
+          `${window.location.origin}/onboarding/select-forms`,
+        );
+        formSelectionUrl.searchParams.set(
+          "pageData",
+          encodeURIComponent(JSON.stringify(pageData)),
+        );
+
         router.push(formSelectionUrl.pathname + formSelectionUrl.search);
       } else {
         throw new Error("Failed to connect page");
@@ -123,8 +135,10 @@ export default function PageSelectionView() {
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-2">Select Facebook Page</h1>
-      <p className="text-default-500 text-sm mb-8">Choose which page to connect</p>
-      
+      <p className="text-default-500 text-sm mb-8">
+        Choose which page to connect
+      </p>
+
       <div className="space-y-6 max-w-2xl">
         {pages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -133,59 +147,63 @@ export default function PageSelectionView() {
           </div>
         ) : (
           <>
-            <div className="space-y-3">
+            <RadioGroup
+              value={selectedPageId}
+              onValueChange={setSelectedPageId}
+              className="gap-3"
+            >
               {pages.map((page) => (
-                <div
+                <Radio
                   key={page.id}
-                  onClick={() => setSelectedPageId(page.id)}
-                  className={`
-                    relative p-6 rounded-xl border cursor-pointer transition-all
-                    ${selectedPageId === page.id 
-                      ? "border-primary bg-primary-50/30 dark:bg-primary-100/10" 
-                      : "border-default-200 hover:border-default-300 hover:bg-default-50 dark:hover:bg-default-100/5"
-                    }
-                  `}
+                  value={page.id}
+                  classNames={{
+                    base: `
+                      relative p-6 rounded-xl border cursor-pointer transition-all max-w-full
+                      data-[selected=true]:border-primary data-[selected=true]:bg-primary-50/30 
+                      data-[selected=true]:dark:bg-primary-100/10
+                      border-default-200 hover:border-default-300 hover:bg-default-50 
+                      dark:hover:bg-default-100/5
+                    `,
+                    label: "w-full",
+                    labelWrapper: "w-full m-0",
+                    control: "hidden",
+                  }}
                 >
-                  <div className="flex items-center gap-4">
-                    {/* Radio indicator */}
-                    <div className={`
-                      w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
-                      ${selectedPageId === page.id 
-                        ? "border-primary" 
-                        : "border-default-300"
-                      }
-                    `}>
-                      {selectedPageId === page.id && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                    
+                  <div className="flex items-center gap-4 w-full">
                     {/* Avatar with subtle border */}
                     <Avatar
                       src={page.picture?.data?.url}
-                      icon={<Icon icon="solar:facebook-bold" width={20} height={20} />}
+                      icon={
+                        <Icon
+                          icon="solar:facebook-bold"
+                          width={20}
+                          height={20}
+                        />
+                      }
                       className="bg-primary ring-1 ring-default-200/50"
                       size="md"
                     />
-                    
+
                     {/* Page info */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <p className="text-lg font-semibold">{page.name}</p>
-                        {page.lead_forms_count !== undefined && page.lead_forms_count > 0 && (
-                          <Chip size="sm" color="success" variant="flat">
-                            {page.lead_forms_count} Lead Form{page.lead_forms_count !== 1 ? 's' : ''}
-                          </Chip>
-                        )}
+                        {page.lead_forms_count !== undefined &&
+                          page.lead_forms_count > 0 && (
+                            <Chip size="sm" color="success" variant="flat">
+                              {page.lead_forms_count} Lead Form
+                              {page.lead_forms_count !== 1 ? "s" : ""}
+                            </Chip>
+                          )}
                       </div>
                       <p className="text-sm text-default-500 mt-0.5">
                         {page.category || "Social Media Agency"}
                       </p>
                     </div>
                   </div>
-                </div>
+                </Radio>
               ))}
-            </div>
+            </RadioGroup>
 
             <div className="flex justify-between pt-4">
               <Button
@@ -198,7 +216,7 @@ export default function PageSelectionView() {
               >
                 Back
               </Button>
-              
+
               <Button
                 color="primary"
                 size="lg"

@@ -1,19 +1,13 @@
 "use client";
 
-import React, { useCallback } from "react";
-import {
-  Input,
-  Select,
-  SelectItem,
-  Button,
-  Chip,
-} from "@heroui/react";
+import { Button, Chip, Input, Select, SelectItem } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useLeadStages, useLeadTags } from "@/hooks/useLeads";
-import GlobalDateRangePicker from "@/components/shared/GlobalDateRangePicker";
 import { parseDate } from "@internationalized/date";
+import { useCallback } from "react";
+import GlobalDateRangePicker from "@/components/shared/GlobalDateRangePicker";
+import type { Doc } from "@/convex/_generated/dataModel";
+import { useLeadStages, useLeadTags } from "@/hooks/useLeads";
 import type { LeadFilters } from "@/types/leads";
-import { Doc } from "@/convex/_generated/dataModel";
 
 interface LeadsFiltersProps {
   filters: LeadFilters;
@@ -32,42 +26,52 @@ export function LeadsFilters({
   const { tags } = useLeadTags();
 
   // Handle date range change
-  const handleDateRangeChange = useCallback((range: { start: { year: number; month: number; day: number }; end: { year: number; month: number; day: number } } | null, preset?: string | null) => {
-    if (range && range.start && range.end) {
-      // Convert CalendarDate to Date strings
-      const startDate = `${range.start.year}-${String(range.start.month).padStart(2, '0')}-${String(range.start.day).padStart(2, '0')}`;
-      const endDate = `${range.end.year}-${String(range.end.month).padStart(2, '0')}-${String(range.end.day).padStart(2, '0')}`;
-      
-      onFilterChange("dateRange", {
-        start: new Date(startDate),
-        end: new Date(endDate),
-        preset
-      });
-    } else {
-      onFilterChange("dateRange", null);
-    }
-  }, [onFilterChange]);
+  const handleDateRangeChange = useCallback(
+    (
+      range: {
+        start: { year: number; month: number; day: number };
+        end: { year: number; month: number; day: number };
+      } | null,
+      preset?: string | null,
+    ) => {
+      if (range?.start && range.end) {
+        // Convert CalendarDate to Date strings
+        const startDate = `${range.start.year}-${String(range.start.month).padStart(2, "0")}-${String(range.start.day).padStart(2, "0")}`;
+        const endDate = `${range.end.year}-${String(range.end.month).padStart(2, "0")}-${String(range.end.day).padStart(2, "0")}`;
+
+        onFilterChange("dateRange", {
+          start: new Date(startDate),
+          end: new Date(endDate),
+          preset,
+        });
+      } else {
+        onFilterChange("dateRange", null);
+      }
+    },
+    [onFilterChange],
+  );
 
   // Convert existing date range to CalendarDateRange for the picker
-  const calendarDateRange = filters.dateRange ? {
-    start: parseDate(filters.dateRange.start instanceof Date 
-      ? filters.dateRange.start.toISOString().split('T')[0]
-      : filters.dateRange.start),
-    end: parseDate(filters.dateRange.end instanceof Date
-      ? filters.dateRange.end.toISOString().split('T')[0] 
-      : filters.dateRange.end)
-  } : undefined;
+  const calendarDateRange = filters.dateRange
+    ? {
+        start: parseDate(
+          filters.dateRange.start instanceof Date
+            ? filters.dateRange.start.toISOString().split("T")[0]
+            : filters.dateRange.start,
+        ),
+        end: parseDate(
+          filters.dateRange.end instanceof Date
+            ? filters.dateRange.end.toISOString().split("T")[0]
+            : filters.dateRange.end,
+        ),
+      }
+    : undefined;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Filters</h3>
-        <Button
-          size="sm"
-          variant="light"
-          onPress={onClose}
-          isIconOnly
-        >
+        <Button size="sm" variant="light" onPress={onClose} isIconOnly>
           <Icon icon="solar:close-circle-linear" className="text-xl" />
         </Button>
       </div>
@@ -92,9 +96,7 @@ export function LeadsFilters({
           variant="bordered"
         >
           {stages.map((stage: Doc<"leadStages">) => (
-            <SelectItem key={stage.name}>
-              {stage.label}
-            </SelectItem>
+            <SelectItem key={stage.name}>{stage.label}</SelectItem>
           ))}
         </Select>
 
@@ -116,30 +118,23 @@ export function LeadsFilters({
         <Select
           label="Date Field"
           placeholder="Select date field"
-          selectedKeys={filters.dateField ? [filters.dateField] : ["createdTime"]}
-          onChange={(e) => onFilterChange("dateField", e.target.value || "createdTime")}
+          selectedKeys={
+            filters.dateField ? [filters.dateField] : ["createdTime"]
+          }
+          onChange={(e) =>
+            onFilterChange("dateField", e.target.value || "createdTime")
+          }
           variant="bordered"
         >
-          <SelectItem key="createdTime">
-            Lead Created (Meta)
-          </SelectItem>
-          <SelectItem key="syncedAt">
-            Imported Date
-          </SelectItem>
-          <SelectItem key="lastActivityAt">
-            Last Activity
-          </SelectItem>
-          <SelectItem key="followUpDate">
-            Follow-up Date
-          </SelectItem>
-          <SelectItem key="createdAt">
-            Database Entry
-          </SelectItem>
+          <SelectItem key="createdTime">Lead Created (Meta)</SelectItem>
+          <SelectItem key="syncedAt">Imported Date</SelectItem>
+          <SelectItem key="lastActivityAt">Last Activity</SelectItem>
+          <SelectItem key="followUpDate">Follow-up Date</SelectItem>
+          <SelectItem key="createdAt">Database Entry</SelectItem>
         </Select>
 
         {/* Date Range Picker */}
         <div className="md:col-span-2">
-          <label className="text-sm font-medium mb-2 block">Date Range</label>
           <GlobalDateRangePicker
             value={calendarDateRange}
             onChange={handleDateRangeChange}
@@ -149,14 +144,14 @@ export function LeadsFilters({
             useGlobalState={false}
             presets={[
               "today",
-              "yesterday", 
+              "yesterday",
               "last_7_days",
               "last_30_days",
               "last_90_days",
               "this_month",
               "last_month",
               "this_year",
-              "lifetime"
+              "lifetime",
             ]}
           />
         </div>

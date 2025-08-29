@@ -1,8 +1,10 @@
-import { Doc, Id } from "../_generated/dataModel";
-import { MutationCtx, QueryCtx } from "../_generated/server";
+import type { Doc, Id } from "../_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { auth } from "../auth";
 
-export async function getAuthUserId(ctx: QueryCtx | MutationCtx): Promise<Id<"users"> | null> {
+export async function getAuthUserId(
+  ctx: QueryCtx | MutationCtx,
+): Promise<Id<"users"> | null> {
   const session = await auth.getUserId(ctx);
   return session as Id<"users"> | null;
 }
@@ -19,7 +21,7 @@ export async function handleExistingUser(
     name?: string;
     image?: string;
     emailVerified?: boolean;
-  }
+  },
 ): Promise<Id<"users">> {
   const email = profile.email;
 
@@ -44,7 +46,7 @@ export async function handleExistingUser(
       if (user.status === "invited") {
         updates.status = "active";
         console.log(
-          `[AUTH] User ${user.email} activated from invited status with role ${user.role}`
+          `[AUTH] User ${user.email} activated from invited status with role ${user.role}`,
         );
       }
 
@@ -84,7 +86,7 @@ export async function handleExistingUser(
       existingUser.inviteExpiresAt < now
     ) {
       throw new Error(
-        "Your invitation has expired. Please contact your administrator for a new invite."
+        "Your invitation has expired. Please contact your administrator for a new invite.",
       );
     }
 
@@ -100,7 +102,7 @@ export async function handleExistingUser(
       updates.status = "active";
       // Role is preserved from invite, not changed
       console.log(
-        `[AUTH] Invited user ${existingUser.email} activated with role ${existingUser.role}`
+        `[AUTH] Invited user ${existingUser.email} activated with role ${existingUser.role}`,
       );
     }
 
@@ -143,7 +145,7 @@ export async function handleExistingUser(
 
 export async function shouldCreateOrganization(
   ctx: MutationCtx,
-  userId: Id<"users">
+  userId: Id<"users">,
 ): Promise<boolean> {
   const user = await ctx.db.get(userId);
   return !!(user && !user.organizationId);
@@ -152,7 +154,7 @@ export async function shouldCreateOrganization(
 export async function createOrganizationForUser(
   ctx: MutationCtx,
   userId: Id<"users">,
-  user: Doc<"users">
+  user: Doc<"users">,
 ): Promise<void> {
   const now = Date.now();
 

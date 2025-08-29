@@ -18,8 +18,8 @@ export const metaIntegrations = defineTable({
       v.literal("idle"),
       v.literal("syncing"),
       v.literal("completed"),
-      v.literal("failed")
-    )
+      v.literal("failed"),
+    ),
   ),
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -47,7 +47,7 @@ export const leads = defineTable({
     v.object({
       name: v.string(),
       value: v.string(),
-    })
+    }),
   ),
   // Parsed common fields for easy access
   email: v.optional(v.string()),
@@ -60,35 +60,35 @@ export const leads = defineTable({
   state: v.optional(v.string()),
   country: v.optional(v.string()),
   zipCode: v.optional(v.string()),
-  
+
   // Work-related fields
   jobTitle: v.optional(v.string()),
   workEmail: v.optional(v.string()),
   workPhone: v.optional(v.string()),
-  
+
   // Demographic fields
   dateOfBirth: v.optional(v.string()),
   gender: v.optional(v.string()),
   maritalStatus: v.optional(v.string()),
   militaryStatus: v.optional(v.string()),
-  
-  // Extended location fields  
+
+  // Extended location fields
   streetAddress: v.optional(v.string()),
   addressLine2: v.optional(v.string()),
   postBox: v.optional(v.string()),
-  
+
   // National ID fields (for specific countries)
   nationalIdNumber: v.optional(v.string()),
   nationalIdType: v.optional(v.string()),
-  
+
   // Retailer/Dealer fields
   retailerItemId: v.optional(v.string()),
   selectedDealer: v.optional(v.string()),
-  
+
   // Custom fields
   customDisclaimer: v.optional(v.string()), // JSON string for disclaimer responses
   customQuestions: v.optional(v.string()), // JSON string for custom question responses
-  
+
   createdTime: v.number(), // Meta creation timestamp
   platform: v.optional(v.string()), // fb, ig, etc.
   isOrganic: v.boolean(),
@@ -99,28 +99,32 @@ export const leads = defineTable({
     v.literal("contacted"),
     v.literal("qualified"),
     v.literal("converted"),
-    v.literal("lost")
+    v.literal("lost"),
   ),
   notes: v.optional(v.string()),
   assignedTo: v.optional(v.id("users")),
-  
+
   // Enhanced fields for advanced management
-  stage: v.optional(v.union(
-    v.literal("new"),
-    v.literal("contacted"),
-    v.literal("qualified"),
-    v.literal("proposal"),
-    v.literal("negotiation"),
-    v.literal("closed-won"),
-    v.literal("closed-lost"),
-    v.literal("nurture")
-  )),
-  priority: v.optional(v.union(
-    v.literal("low"),
-    v.literal("medium"),
-    v.literal("high"),
-    v.literal("urgent")
-  )),
+  stage: v.optional(
+    v.union(
+      v.literal("new"),
+      v.literal("contacted"),
+      v.literal("qualified"),
+      v.literal("proposal"),
+      v.literal("negotiation"),
+      v.literal("closed-won"),
+      v.literal("closed-lost"),
+      v.literal("nurture"),
+    ),
+  ),
+  priority: v.optional(
+    v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("urgent"),
+    ),
+  ),
   score: v.optional(v.number()), // Lead scoring 0-100
   source: v.optional(v.string()), // UTM source, referrer, etc.
   tags: v.optional(v.array(v.id("leadTags"))),
@@ -129,7 +133,7 @@ export const leads = defineTable({
   followUpDate: v.optional(v.number()),
   estimatedValue: v.optional(v.number()),
   probability: v.optional(v.number()), // Win probability 0-100
-  
+
   createdAt: v.number(),
   updatedAt: v.number(),
 })
@@ -154,13 +158,13 @@ export const leadSyncJobs = defineTable({
   jobType: v.union(
     v.literal("historical"),
     v.literal("webhook"),
-    v.literal("manual")
+    v.literal("manual"),
   ),
   status: v.union(
     v.literal("pending"),
     v.literal("processing"),
     v.literal("completed"),
-    v.literal("failed")
+    v.literal("failed"),
   ),
   startDate: v.optional(v.number()),
   endDate: v.optional(v.number()),
@@ -214,7 +218,7 @@ export const leadCustomFields = defineTable({
     v.literal("currency"),
     v.literal("percent"),
     v.literal("textarea"),
-    v.literal("richtext")
+    v.literal("richtext"),
   ),
   options: v.optional(v.array(v.string())), // For select/multiselect
   required: v.boolean(),
@@ -285,7 +289,7 @@ export const leadActivities = defineTable({
     v.literal("task_completed"),
     v.literal("tag_added"),
     v.literal("tag_removed"),
-    v.literal("custom")
+    v.literal("custom"),
   ),
   description: v.string(),
   metadata: v.optional(v.string()), // JSON string for additional data
@@ -302,7 +306,11 @@ export const leadViews = defineTable({
   organizationId: v.id("organizations"),
   userId: v.optional(v.id("users")), // null for org-wide views
   name: v.string(),
-  viewType: v.union(v.literal("table"), v.literal("kanban"), v.literal("calendar")),
+  viewType: v.union(
+    v.literal("table"),
+    v.literal("kanban"),
+    v.literal("calendar"),
+  ),
   filters: v.string(), // JSON string for filter configuration
   sorting: v.optional(v.string()), // JSON string for sort configuration
   columns: v.optional(v.string()), // JSON string for visible columns
@@ -316,4 +324,5 @@ export const leadViews = defineTable({
   .index("byOrganization", ["organizationId"])
   .index("byUser", ["userId"])
   .index("byOrganizationAndUser", ["organizationId", "userId"])
+  .index("byOrganizationAndShared", ["organizationId", "isShared"])
   .index("byOrder", ["order"]);

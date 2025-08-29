@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useCallback } from "react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import {
   Avatar,
   Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
   DropdownItem,
+  DropdownMenu,
   DropdownSection,
+  DropdownTrigger,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import Link from "next/link";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex-helpers/react/cache/hooks";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import React, { useCallback } from "react";
 
 import { api } from "@/convex/_generated/api";
 

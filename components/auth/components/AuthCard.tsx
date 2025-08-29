@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { m, LazyMotion, domAnimation } from "framer-motion";
+import { domAnimation, LazyMotion, m } from "framer-motion";
+import React from "react";
 
 interface AuthCardProps {
   title: string;
@@ -42,12 +42,12 @@ const AuthCard = React.memo(function AuthCard({
               {title}
             </m.h1>
             <p className="text-default-500 mt-2">
-              {showBack ? "Enter the code we sent you" : "Sign in to your account"}
+              {showBack
+                ? "Enter the code we sent you"
+                : "Sign in to your account"}
             </p>
           </m.div>
-          <div className="mt-6">
-            {children}
-          </div>
+          <div className="mt-6">{children}</div>
         </LazyMotion>
       </div>
     </div>

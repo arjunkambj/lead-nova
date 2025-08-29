@@ -1,10 +1,15 @@
 "use client";
 
-import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { useCallback, useMemo, useState, useEffect } from "react";
-import type { LeadFilters, SortConfig, LeadFieldValue, BulkUpdateData } from "@/types/leads";
+import type { Id } from "@/convex/_generated/dataModel";
+import type {
+  BulkUpdateData,
+  LeadFieldValue,
+  LeadFilters,
+  SortConfig,
+} from "@/types/leads";
 
 // Debounce hook for values
 function useDebounceValue<T>(value: T, delay: number): T {
@@ -31,18 +36,13 @@ export function useLeadsTable(filters?: LeadFilters, sorting?: SortConfig) {
   const debouncedFilters = useDebounceValue(JSON.stringify(filters || {}), 500);
   const debouncedSorting = useDebounceValue(JSON.stringify(sorting || {}), 500);
 
-  const { 
-    results, 
-    status, 
-    loadMore, 
-    isLoading 
-  } = usePaginatedQuery(
+  const { results, status, loadMore, isLoading } = usePaginatedQuery(
     api.core.leads.getLeadsTable,
-    { 
+    {
       filters: debouncedFilters,
-      sorting: debouncedSorting
+      sorting: debouncedSorting,
     },
-    { initialNumItems: pageSize }
+    { initialNumItems: pageSize },
   );
 
   return {
@@ -58,7 +58,7 @@ export function useLeadsTable(filters?: LeadFilters, sorting?: SortConfig) {
 // Kanban view hook
 export function useLeadsKanban(filters?: LeadFilters) {
   const debouncedFilters = useDebounceValue(JSON.stringify(filters || {}), 500);
-  
+
   const stages = useQuery(api.core.leads.getLeadsKanban, {
     filters: debouncedFilters,
   });
@@ -72,13 +72,15 @@ export function useLeadsKanban(filters?: LeadFilters) {
 // Single lead field update with optimistic updates
 export function useUpdateLeadField() {
   const updateField = useMutation(api.core.leads.updateLeadField);
-  const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, LeadFieldValue>>(new Map());
+  const [optimisticUpdates, setOptimisticUpdates] = useState<
+    Map<string, LeadFieldValue>
+  >(new Map());
 
   const updateOptimistic = useCallback(
     async (leadId: Id<"leads">, field: string, value: LeadFieldValue) => {
       // Optimistically update the UI immediately
       const updateKey = `${leadId}-${field}`;
-      setOptimisticUpdates(prev => {
+      setOptimisticUpdates((prev) => {
         const next = new Map(prev);
         next.set(updateKey, value);
         return next;
@@ -88,30 +90,40 @@ export function useUpdateLeadField() {
         if (value === undefined) {
           value = null;
         }
-        await updateField({ leadId, field, value: value as string | number | boolean | Id<"users"> | Id<"leadTags">[] | null });
-        
+        await updateField({
+          leadId,
+          field,
+          value: value as
+            | string
+            | number
+            | boolean
+            | Id<"users">
+            | Id<"leadTags">[]
+            | null,
+        });
+
         // Clear optimistic update on success
-        setOptimisticUpdates(prev => {
+        setOptimisticUpdates((prev) => {
           const next = new Map(prev);
           next.delete(updateKey);
           return next;
         });
-        
+
         return { success: true };
       } catch (error) {
         console.error("Failed to update lead field:", error);
-        
+
         // Rollback optimistic update on error
-        setOptimisticUpdates(prev => {
+        setOptimisticUpdates((prev) => {
           const next = new Map(prev);
           next.delete(updateKey);
           return next;
         });
-        
+
         return { success: false, error };
       }
     },
-    [updateField]
+    [updateField],
   );
 
   return { updateOptimistic, optimisticUpdates };
@@ -128,7 +140,8 @@ export function useBulkUpdateLeads() {
         const cleanedUpdates = {
           ...(updates.stage !== undefined && { stage: updates.stage }),
           ...(updates.priority !== undefined && { priority: updates.priority }),
-          ...(updates.assignedTo !== undefined && updates.assignedTo !== null && { assignedTo: updates.assignedTo }),
+          ...(updates.assignedTo !== undefined &&
+            updates.assignedTo !== null && { assignedTo: updates.assignedTo }),
           ...(updates.tags !== undefined && { tags: updates.tags }),
         };
         const result = await bulkUpdate({ leadIds, updates: cleanedUpdates });
@@ -138,7 +151,7 @@ export function useBulkUpdateLeads() {
         return { success: false, error };
       }
     },
-    [bulkUpdate]
+    [bulkUpdate],
   );
 
   return performBulkUpdate;
@@ -224,11 +237,13 @@ export function useLeadStats() {
 
 // Lead selection management (client-side state)
 export function useLeadSelection() {
-  const [selectedLeads, setSelectedLeads] = useState<Set<Id<"leads">>>(new Set());
+  const [selectedLeads, setSelectedLeads] = useState<Set<Id<"leads">>>(
+    new Set(),
+  );
   const [selectAll, setSelectAll] = useState(false);
 
   const toggleSelection = useCallback((leadId: Id<"leads">) => {
-    setSelectedLeads(prev => {
+    setSelectedLeads((prev) => {
       const next = new Set(prev);
       if (next.has(leadId)) {
         next.delete(leadId);
@@ -239,24 +254,30 @@ export function useLeadSelection() {
     });
   }, []);
 
-  const toggleSelectAll = useCallback((allLeadIds: Id<"leads">[]) => {
-    if (selectAll) {
-      setSelectedLeads(new Set());
-      setSelectAll(false);
-    } else {
-      setSelectedLeads(new Set(allLeadIds));
-      setSelectAll(true);
-    }
-  }, [selectAll]);
+  const toggleSelectAll = useCallback(
+    (allLeadIds: Id<"leads">[]) => {
+      if (selectAll) {
+        setSelectedLeads(new Set());
+        setSelectAll(false);
+      } else {
+        setSelectedLeads(new Set(allLeadIds));
+        setSelectAll(true);
+      }
+    },
+    [selectAll],
+  );
 
   const clearSelection = useCallback(() => {
     setSelectedLeads(new Set());
     setSelectAll(false);
   }, []);
 
-  const isSelected = useCallback((leadId: Id<"leads">) => {
-    return selectedLeads.has(leadId);
-  }, [selectedLeads]);
+  const isSelected = useCallback(
+    (leadId: Id<"leads">) => {
+      return selectedLeads.has(leadId);
+    },
+    [selectedLeads],
+  );
 
   return {
     selectedLeads: Array.from(selectedLeads),
@@ -278,12 +299,16 @@ export function useLeadFilters() {
     tags: [] as Id<"leadTags">[],
     search: "",
     dateField: "createdTime" as string,
-    dateRange: null as { start: Date; end: Date; preset?: string | null } | null,
+    dateRange: null as {
+      start: Date;
+      end: Date;
+      preset?: string | null;
+    } | null,
     score: null as { min: number; max: number } | null,
   });
 
   const updateFilter = useCallback((key: string, value: unknown) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -333,7 +358,7 @@ export function useLeadSort() {
   } | null>(null);
 
   const handleSort = useCallback((field: string) => {
-    setSortConfig(prev => {
+    setSortConfig((prev) => {
       if (!prev || prev.field !== field) {
         return { field, direction: "asc" };
       }
@@ -344,14 +369,17 @@ export function useLeadSort() {
     });
   }, []);
 
-  const getSortIcon = useCallback((field: string) => {
-    if (!sortConfig || sortConfig.field !== field) {
-      return "solar:sort-linear";
-    }
-    return sortConfig.direction === "asc" 
-      ? "solar:sort-from-bottom-to-top-linear"
-      : "solar:sort-from-top-to-bottom-linear";
-  }, [sortConfig]);
+  const getSortIcon = useCallback(
+    (field: string) => {
+      if (!sortConfig || sortConfig.field !== field) {
+        return "solar:sort-linear";
+      }
+      return sortConfig.direction === "asc"
+        ? "solar:sort-from-bottom-to-top-linear"
+        : "solar:sort-from-top-to-bottom-linear";
+    },
+    [sortConfig],
+  );
 
   return {
     sortConfig,

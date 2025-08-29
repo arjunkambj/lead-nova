@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
 import { Input } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import React from "react";
 
 interface EmailInputProps {
   value: string;

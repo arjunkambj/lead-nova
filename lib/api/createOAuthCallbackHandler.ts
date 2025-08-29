@@ -1,7 +1,6 @@
-import type { FunctionReference } from "convex/server";
-
-import { NextRequest, NextResponse } from "next/server";
 import { fetchMutation } from "convex/nextjs";
+import type { FunctionReference } from "convex/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { createLogger } from "../logging/Logger";
 
@@ -46,12 +45,12 @@ interface CreateOAuthCallbackHandlerOptions<
     code: string,
     clientId: string,
     clientSecret: string,
-    redirectUri: string
+    redirectUri: string,
   ) => Promise<TokenExchangeResult>;
   getUserInfo?: (accessToken: string) => Promise<OAuthUserInfo>;
   fetchAdAccounts?: (
     accessToken: string,
-    additionalParams?: Record<string, string>
+    additionalParams?: Record<string, string>,
   ) => Promise<AdAccount[]>;
   transformConnectionData?: (data: {
     tokenData: TokenExchangeResult;
@@ -97,7 +96,7 @@ export function createOAuthCallbackHandler<
         logger.warn(`Unauthorized ${platform} callback attempt`);
 
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=unauthorized`
+          `${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=unauthorized`,
         );
       }
 
@@ -118,7 +117,7 @@ export function createOAuthCallbackHandler<
           });
 
           return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=state_mismatch`
+            `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=state_mismatch`,
           );
         }
       }
@@ -133,14 +132,14 @@ export function createOAuthCallbackHandler<
         });
 
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=${encodeURIComponent(error)}`
+          `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=${encodeURIComponent(error)}`,
         );
       }
 
       // Check for authorization code
       if (!code) {
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=missing_code`
+          `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=missing_code`,
         );
       }
 
@@ -154,11 +153,11 @@ export function createOAuthCallbackHandler<
       if (!clientId || !clientSecret) {
         logger.error(
           `Missing ${platform} credentials`,
-          new Error("Missing environment variables")
+          new Error("Missing environment variables"),
         );
 
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=missing_credentials`
+          `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=missing_credentials`,
         );
       }
 
@@ -168,7 +167,7 @@ export function createOAuthCallbackHandler<
           logger.error(`Missing ${envVar}`, new Error("Missing env var"));
 
           return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=missing_credentials`
+            `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=missing_credentials`,
           );
         }
       }
@@ -179,7 +178,7 @@ export function createOAuthCallbackHandler<
         code,
         clientId,
         clientSecret,
-        redirectUri
+        redirectUri,
       );
 
       logger.info(`${platform} token exchange successful`, {
@@ -190,7 +189,7 @@ export function createOAuthCallbackHandler<
 
       if (!tokenData.access_token) {
         return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=no_access_token`
+          `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=no_access_token`,
         );
       }
 
@@ -239,12 +238,18 @@ export function createOAuthCallbackHandler<
 
           // Add any additional parameters from environment
           for (const envVar of additionalEnvVars) {
-            additionalParams[envVar] = process.env[envVar]!;
+            const envValue = process.env[envVar];
+            if (!envValue) {
+              throw new Error(
+                `Missing required environment variable: ${envVar}`,
+              );
+            }
+            additionalParams[envVar] = envValue;
           }
 
           const adAccounts = await fetchAdAccounts(
             tokenData.access_token,
-            additionalParams
+            additionalParams,
           );
 
           if (adAccounts && adAccounts.length > 0) {
@@ -262,18 +267,18 @@ export function createOAuthCallbackHandler<
             logger.warn(`No ${platform} ad accounts found`);
 
             return NextResponse.redirect(
-              `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=no_ad_accounts`
+              `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=no_ad_accounts`,
             );
           }
         } catch (adsError) {
           logger.error(
             `Error fetching ${platform} ad accounts`,
-            adsError as Error
+            adsError as Error,
           );
 
           // Still mark as connected even if ad accounts fetch fails
           return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL}${successRedirect}?${platform.toLowerCase()}_connected=true&error=ads_fetch_failed`
+            `${process.env.NEXT_PUBLIC_APP_URL}${successRedirect}?${platform.toLowerCase()}_connected=true&error=ads_fetch_failed`,
           );
         }
       }
@@ -281,7 +286,7 @@ export function createOAuthCallbackHandler<
       // Clear the state cookie if it was used
       if (validateCookieState) {
         const response = NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}${successRedirect}`
+          `${process.env.NEXT_PUBLIC_APP_URL}${successRedirect}`,
         );
 
         response.cookies.delete(`${platform.toLowerCase()}_oauth_state`);
@@ -290,13 +295,13 @@ export function createOAuthCallbackHandler<
       }
 
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}${successRedirect}`
+        `${process.env.NEXT_PUBLIC_APP_URL}${successRedirect}`,
       );
     } catch (error) {
       logger.error(`${platform} callback error`, error as Error);
 
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=callback_error`
+        `${process.env.NEXT_PUBLIC_APP_URL}${errorRedirect}?error=callback_error`,
       );
     }
   };
@@ -310,7 +315,7 @@ export async function standardTokenExchange(
   code: string,
   clientId: string,
   clientSecret: string,
-  redirectUri: string
+  redirectUri: string,
 ): Promise<TokenExchangeResult> {
   const response = await fetch(tokenUrl, {
     method: "POST",
@@ -340,7 +345,7 @@ export async function standardTokenExchange(
  */
 export async function standardGetUserInfo(
   userInfoUrl: string,
-  accessToken: string
+  accessToken: string,
 ): Promise<OAuthUserInfo> {
   const response = await fetch(userInfoUrl, {
     headers: {

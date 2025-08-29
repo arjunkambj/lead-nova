@@ -1,6 +1,6 @@
-import UserProfile from "./UserProfile";
-import SidebarToggle from "@/components/dashboard/SidebarToggle";
 import { Divider } from "@heroui/divider";
+import SidebarToggle from "@/components/dashboard/SidebarToggle";
+import UserProfile from "./UserProfile";
 
 interface MainHeaderProps {
   title: string;

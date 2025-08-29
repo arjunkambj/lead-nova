@@ -1,10 +1,9 @@
 "use client";
 
-import React from "react";
-import { Button, Spinner } from "@heroui/react";
+import { addToast, Button, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
+import React from "react";
 import {
   useCompleteOnboarding,
   useOnboardingStatus,
@@ -91,9 +90,15 @@ export default function OnboardingOverview() {
         {/* Team */}
         <div className="flex items-center gap-3">
           <Icon
-            icon={invitedMembers.length > 0 ? "solar:check-circle-bold" : "solar:minus-circle-linear"}
+            icon={
+              invitedMembers.length > 0
+                ? "solar:check-circle-bold"
+                : "solar:minus-circle-linear"
+            }
             width={20}
-            className={invitedMembers.length > 0 ? "text-success" : "text-default-300"}
+            className={
+              invitedMembers.length > 0 ? "text-success" : "text-default-300"
+            }
           />
           <div className="flex-1">
             <p className="text-sm font-medium">Team members</p>

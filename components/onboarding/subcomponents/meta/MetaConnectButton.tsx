@@ -2,10 +2,10 @@
 
 import { Button, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useCurrentUser } from "@/hooks/useUser";
 import { useState } from "react";
+import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/useUser";
 
 export default function MetaConnectButton() {
   const router = useRouter();

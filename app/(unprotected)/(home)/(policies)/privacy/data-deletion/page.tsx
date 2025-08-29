@@ -91,7 +91,8 @@ export default function DataDeletionPage() {
           </p>
           <ul className="list-disc pl-6 text-default-700 space-y-2">
             <li>
-              We immediately revoke our app&apos;s access to your Facebook account
+              We immediately revoke our app&apos;s access to your Facebook
+              account
             </li>
             <li>
               All Facebook lead data stored in our system is permanently deleted

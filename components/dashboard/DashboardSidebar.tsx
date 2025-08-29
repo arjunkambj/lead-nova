@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Drawer, DrawerContent, DrawerBody } from "@heroui/drawer";
+import { Drawer, DrawerBody, DrawerContent } from "@heroui/drawer";
 import { useAtom } from "jotai";
-
-import { sidebarOpenAtom } from "@/store/atoms";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
+import { sidebarOpenAtom } from "@/store/atoms";
 
 import SidebarContent from "./components/SidebarContent";
 
@@ -36,7 +35,7 @@ const Sidebar = React.memo(({ className }: { className?: string }) => {
     (open: boolean) => {
       setIsOpen(open);
     },
-    [setIsOpen]
+    [setIsOpen],
   );
 
   useEffect(() => {
@@ -52,17 +51,17 @@ const Sidebar = React.memo(({ className }: { className?: string }) => {
 
   const sidebarContent = useMemo(
     () => <SidebarContent onClose={handleClose} />,
-    [handleClose]
+    [handleClose],
   );
 
   const drawerClasses = useMemo(
     () =>
       "max-w-[260px] w-[260px] bg-background border-r border-default-200 shadow-none p-0",
-    []
+    [],
   );
   const sectionClasses = useMemo(
     () => `h-full ${className || ""}`,
-    [className]
+    [className],
   );
 
   const drawerContent = useMemo(
@@ -88,7 +87,7 @@ const Sidebar = React.memo(({ className }: { className?: string }) => {
         </DrawerContent>
       </Drawer>
     ),
-    [drawerClasses, isOpen, handleDrawerOpenChange]
+    [drawerClasses, isOpen, handleDrawerOpenChange],
   );
 
   if (!isClient) {
@@ -96,12 +95,10 @@ const Sidebar = React.memo(({ className }: { className?: string }) => {
   }
 
   return (
-    <>
-      <section className={sectionClasses}>
-        {!isMobile && sidebarContent}
-        {isMobile && drawerContent}
-      </section>
-    </>
+    <section className={sectionClasses}>
+      {!isMobile && sidebarContent}
+      {isMobile && drawerContent}
+    </section>
   );
 });
 

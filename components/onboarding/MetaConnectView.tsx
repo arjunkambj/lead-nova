@@ -1,19 +1,19 @@
 "use client";
 
-import { Button, Chip, Avatar } from "@heroui/react";
+import { Avatar, Button, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useMetaConnectionStatus } from "@/hooks/useMeta";
+import {
+  useOnboardingStatus,
+  useSkipOnboardingStep,
+  useUpdateOnboardingStep,
+} from "@/hooks/useOnboarding";
+import MetaCallbackHandler from "./subcomponents/meta/MetaCallbackHandler";
 import MetaConnectButton from "./subcomponents/meta/MetaConnectButton";
 import MetaDisconnectAction from "./subcomponents/meta/MetaDisconnectAction";
 import MetaSyncStatus from "./subcomponents/meta/MetaSyncStatus";
-import MetaCallbackHandler from "./subcomponents/meta/MetaCallbackHandler";
-import {
-  useOnboardingStatus,
-  useUpdateOnboardingStep,
-  useSkipOnboardingStep,
-} from "@/hooks/useOnboarding";
-import { useMetaConnectionStatus } from "@/hooks/useMeta";
 
 export default function MetaConnectView() {
   const router = useRouter();
@@ -26,8 +26,7 @@ export default function MetaConnectView() {
 
   const handleContinue = async () => {
     if (
-      onboardingStatus &&
-      onboardingStatus.onboardingStep &&
+      onboardingStatus?.onboardingStep &&
       onboardingStatus.onboardingStep < 3
     ) {
       try {

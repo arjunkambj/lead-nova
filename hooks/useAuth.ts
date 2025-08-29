@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useRouter } from "next/navigation";
 import { addToast } from "@heroui/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
 
 export function useAuth() {
   const { signIn, signOut } = useAuthActions();
@@ -49,7 +49,7 @@ export function useAuth() {
         throw error;
       }
     },
-    [signIn]
+    [signIn],
   );
 
   const verifyOTP = useCallback(
@@ -70,7 +70,7 @@ export function useAuth() {
         throw error;
       }
     },
-    [signIn]
+    [signIn],
   );
 
   const handleSignOut = useCallback(async () => {
@@ -91,7 +91,7 @@ export function useAuth() {
       verifyOTP,
       isLoading: false,
     }),
-    [signIn, handleSignOut, handleGoogleSignIn, sendOTP, verifyOTP]
+    [signIn, handleSignOut, handleGoogleSignIn, sendOTP, verifyOTP],
   );
 }
 
@@ -103,34 +103,30 @@ export function useOTPFlow() {
     async (email: string) => {
       await sendOTP(email);
     },
-    [sendOTP]
+    [sendOTP],
   );
 
   const handleSignupOTP = useCallback(
     async (email: string, name: string) => {
       await sendOTP(email, name);
     },
-    [sendOTP]
+    [sendOTP],
   );
 
   const handleVerifyOTP = useCallback(
     async (code: string, redirectTo: string = "/overview") => {
-      try {
-        await verifyOTP(code);
-        addToast({
-          title: "Welcome!",
-          description: "Successfully verified.",
-          color: "success",
-          timeout: 2000,
-        });
-        setTimeout(() => {
-          router.push(redirectTo);
-        }, 500);
-      } catch (error) {
-        throw error;
-      }
+      await verifyOTP(code);
+      addToast({
+        title: "Welcome!",
+        description: "Successfully verified.",
+        color: "success",
+        timeout: 2000,
+      });
+      setTimeout(() => {
+        router.push(redirectTo);
+      }, 500);
     },
-    [verifyOTP, router]
+    [verifyOTP, router],
   );
 
   return useMemo(
@@ -139,6 +135,6 @@ export function useOTPFlow() {
       handleSignupOTP,
       handleVerifyOTP,
     }),
-    [handleLoginOTP, handleSignupOTP, handleVerifyOTP]
+    [handleLoginOTP, handleSignupOTP, handleVerifyOTP],
   );
 }

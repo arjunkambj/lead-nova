@@ -22,7 +22,7 @@ export const ONBOARDING_ROUTES = {
 export function getOnboardingRoute(
   step: number | undefined,
   isCompleted: boolean | undefined,
-  isOnboarded: boolean | undefined
+  isOnboarded: boolean | undefined,
 ): string {
   // If user is fully onboarded, go to main overview
   if (isOnboarded || isCompleted) {
@@ -31,17 +31,20 @@ export function getOnboardingRoute(
 
   // Default to step 1 if no step is provided
   const currentStep = step || ONBOARDING_STEPS.CREATE_ORGANIZATION;
-  
+
   // Ensure step is within valid range
   if (currentStep < ONBOARDING_STEPS.CREATE_ORGANIZATION) {
     return ONBOARDING_ROUTES[ONBOARDING_STEPS.CREATE_ORGANIZATION];
   }
-  
+
   if (currentStep > ONBOARDING_STEPS.OVERVIEW) {
     return ONBOARDING_ROUTES[ONBOARDING_STEPS.OVERVIEW];
   }
-  
-  return ONBOARDING_ROUTES[currentStep as keyof typeof ONBOARDING_ROUTES] || ONBOARDING_ROUTES[1];
+
+  return (
+    ONBOARDING_ROUTES[currentStep as keyof typeof ONBOARDING_ROUTES] ||
+    ONBOARDING_ROUTES[1]
+  );
 }
 
 /**
@@ -49,7 +52,7 @@ export function getOnboardingRoute(
  */
 export function shouldBeOnStep(
   currentStep: number | undefined,
-  expectedStep: number
+  expectedStep: number,
 ): boolean {
   return (currentStep || 1) === expectedStep;
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Accordion, AccordionItem, Spacer } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
@@ -41,9 +40,9 @@ export default function Faqs() {
           items={faqs}
           selectionMode="multiple"
         >
-          {faqs.map((item, i) => (
+          {faqs.map((item) => (
             <AccordionItem
-              key={i}
+              key={`faq-${item.title.replace(/\s+/g, "-").toLowerCase()}`}
               indicator={
                 <Icon
                   className="text-secondary"

@@ -3,8 +3,8 @@
  */
 
 import { getOAuthUrl, META_CONFIG } from "../../configs/meta";
-import { getMetaAPI } from "./api";
 import type { MetaOAuthState, MetaTokenResponse } from "../../types/meta";
+import { getMetaAPI } from "./api";
 
 /**
  * Generate OAuth state for security
@@ -49,7 +49,7 @@ export function validateOAuthState(state: MetaOAuthState): boolean {
 export function initiateOAuth(
   organizationId: string,
   userId: string,
-  redirectUri: string
+  redirectUri: string,
 ): string {
   const state = generateOAuthState({ organizationId, userId });
   return getOAuthUrl(redirectUri, state);
@@ -61,7 +61,7 @@ export function initiateOAuth(
 export async function handleOAuthCallback(
   code: string,
   state: string,
-  redirectUri: string
+  redirectUri: string,
 ): Promise<{
   success: boolean;
   token?: string;
@@ -120,7 +120,7 @@ export async function refreshAccessToken(currentToken: string): Promise<{
           client_secret: process.env.META_APP_SECRET,
           fb_exchange_token: currentToken,
         },
-      }
+      },
     );
 
     const data = response.data as MetaTokenResponse;
@@ -163,7 +163,7 @@ export async function revokeAccessToken(token: string): Promise<boolean> {
       `https://graph.facebook.com/${META_CONFIG.API_VERSION}/me/permissions`,
       {
         params: { access_token: token },
-      }
+      },
     );
     return true;
   } catch (error) {

@@ -42,7 +42,7 @@ export function createOAuthHandler(options: OAuthHandlerOptions) {
       authUrl.searchParams.set("state", state);
       authUrl.searchParams.set(
         "scope",
-        Array.isArray(scope) ? scope.join(" ") : scope
+        Array.isArray(scope) ? scope.join(" ") : scope,
       );
 
       // Add any additional parameters
@@ -58,7 +58,7 @@ export function createOAuthHandler(options: OAuthHandlerOptions) {
 
       return NextResponse.json(
         { error: `Failed to start ${platform} OAuth flow` },
-        { status: 500 }
+        { status: 500 },
       );
     }
   };

@@ -1,12 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Button, Checkbox, Spinner, Chip, Progress } from "@heroui/react";
+import {
+  Button,
+  Card,
+  CardBody,
+  Checkbox,
+  Chip,
+  Progress,
+  Spinner,
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useTriggerSyncWithForms, useGetPageForms } from "@/hooks/useMeta";
-import { Id } from "@/convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
+import { useGetPageForms, useTriggerSyncWithForms } from "@/hooks/useMeta";
 
 interface FormInfo {
   id: string;
@@ -28,46 +36,51 @@ export default function FormSelectionView() {
   const searchParams = useSearchParams();
   const triggerSync = useTriggerSyncWithForms();
   const getPageForms = useGetPageForms();
-  
+
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [forms, setForms] = useState<FormInfo[]>([]);
-  const [selectedFormIds, setSelectedFormIds] = useState<Set<string>>(new Set());
+  const [selectedFormIds, setSelectedFormIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [isLoadingForms, setIsLoadingForms] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<number>(0);
 
-  const fetchForms = useCallback(async (data: PageData) => {
-    setIsLoadingForms(true);
-    
-    try {
-      const result = await getPageForms({
-        pageId: data.pageId,
-        pageAccessToken: data.pageAccessToken,
-      });
-      
-      if (result.success && result.forms) {
-        setForms(result.forms);
-        
-        // Pre-select all forms
-        const allFormIds = new Set(result.forms.map((f: FormInfo) => f.id));
-        setSelectedFormIds(allFormIds);
+  const fetchForms = useCallback(
+    async (data: PageData) => {
+      setIsLoadingForms(true);
+
+      try {
+        const result = await getPageForms({
+          pageId: data.pageId,
+          pageAccessToken: data.pageAccessToken,
+        });
+
+        if (result.success && result.forms) {
+          setForms(result.forms);
+
+          // Pre-select all forms
+          const allFormIds = new Set(result.forms.map((f: FormInfo) => f.id));
+          setSelectedFormIds(allFormIds);
+        }
+      } catch (error) {
+        console.error("Failed to fetch forms:", error);
+        toast.error("Failed to load forms. Please try again.");
+      } finally {
+        setIsLoadingForms(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch forms:", error);
-      toast.error("Failed to load forms. Please try again.");
-    } finally {
-      setIsLoadingForms(false);
-    }
-  }, [getPageForms]);
+    },
+    [getPageForms],
+  );
 
   useEffect(() => {
     const pageDataParam = searchParams.get("pageData");
-    
+
     if (pageDataParam) {
       try {
         const parsedPageData = JSON.parse(decodeURIComponent(pageDataParam));
         setPageData(parsedPageData);
-        
+
         // Fetch forms for this page
         fetchForms(parsedPageData);
       } catch (error) {
@@ -95,7 +108,7 @@ export default function FormSelectionView() {
     if (selectedFormIds.size === forms.length) {
       setSelectedFormIds(new Set());
     } else {
-      const allFormIds = new Set(forms.map(f => f.id));
+      const allFormIds = new Set(forms.map((f) => f.id));
       setSelectedFormIds(allFormIds);
     }
   };
@@ -114,10 +127,10 @@ export default function FormSelectionView() {
 
     setIsSyncing(true);
     setSyncProgress(0);
-    
+
     // Simulate progress
     const progressInterval = setInterval(() => {
-      setSyncProgress(prev => {
+      setSyncProgress((prev) => {
         if (prev >= 90) {
           clearInterval(progressInterval);
           return 90;
@@ -125,19 +138,19 @@ export default function FormSelectionView() {
         return prev + 10;
       });
     }, 500);
-    
+
     try {
       const result = await triggerSync({
         integrationId: pageData.integrationId,
         formIds: Array.from(selectedFormIds),
       });
-      
+
       if (result.success) {
         clearInterval(progressInterval);
         setSyncProgress(100);
-        
+
         toast.success("Historical lead sync initiated!");
-        
+
         // Continue to next step
         setTimeout(() => {
           router.push("/onboarding/invite-team");
@@ -149,7 +162,7 @@ export default function FormSelectionView() {
       clearInterval(progressInterval);
       console.error("Failed to sync:", error);
       toast.error("Failed to start sync. You can retry from settings later.");
-      
+
       // Continue anyway
       router.push("/onboarding/invite-team");
     } finally {
@@ -169,7 +182,7 @@ export default function FormSelectionView() {
     <div>
       <h1 className="text-2xl font-semibold mb-2">Select Lead Forms</h1>
       <p className="text-default-500 text-sm mb-8">Choose forms to sync</p>
-      
+
       <div className="space-y-6 max-w-2xl">
         {isLoadingForms ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -178,10 +191,16 @@ export default function FormSelectionView() {
           </div>
         ) : forms.length === 0 ? (
           <div className="text-center py-12">
-            <Icon icon="solar:document-linear" width={48} className="text-default-300 mx-auto mb-4" />
+            <Icon
+              icon="solar:document-linear"
+              width={48}
+              className="text-default-300 mx-auto mb-4"
+            />
             <p className="text-default-600 mb-2">No lead forms found</p>
-            <p className="text-sm text-default-500">Create lead forms in Facebook Ads Manager first</p>
-            
+            <p className="text-sm text-default-500">
+              Create lead forms in Facebook Ads Manager first
+            </p>
+
             <div className="flex justify-center gap-3 mt-8">
               <Button variant="flat" size="lg" onPress={handleBack}>
                 Back
@@ -198,12 +217,16 @@ export default function FormSelectionView() {
               <div className="flex items-center gap-3">
                 <Checkbox
                   isSelected={selectedFormIds.size === forms.length}
-                  isIndeterminate={selectedFormIds.size > 0 && selectedFormIds.size < forms.length}
+                  isIndeterminate={
+                    selectedFormIds.size > 0 &&
+                    selectedFormIds.size < forms.length
+                  }
                   onValueChange={handleSelectAll}
                   color="primary"
                 />
                 <span className="text-sm font-medium">
-                  Select All ({forms.length} form{forms.length !== 1 ? 's' : ''})
+                  Select All ({forms.length} form{forms.length !== 1 ? "s" : ""}
+                  )
                 </span>
               </div>
               <div className="min-w-[80px] text-right">
@@ -218,39 +241,47 @@ export default function FormSelectionView() {
             {/* Form list */}
             <div className="space-y-3">
               {forms.map((form) => (
-                <div
+                <Card
                   key={form.id}
-                  onClick={() => handleFormToggle(form.id)}
+                  isPressable
+                  onPress={() => handleFormToggle(form.id)}
                   className={`
-                    relative p-6 rounded-xl border cursor-pointer transition-all
-                    ${selectedFormIds.has(form.id) 
-                      ? "border-primary bg-primary-50/30 dark:bg-primary-100/10" 
-                      : "border-default-200 hover:border-default-300 hover:bg-default-50 dark:hover:bg-default-100/5"
+                    transition-all
+                    ${
+                      selectedFormIds.has(form.id)
+                        ? "border-primary bg-primary-50/30 dark:bg-primary-100/10"
+                        : "border-default-200 hover:border-default-300 hover:bg-default-50 dark:hover:bg-default-100/5"
                     }
                   `}
                 >
-                  <div className="flex items-center gap-4">
-                    <Checkbox
-                      isSelected={selectedFormIds.has(form.id)}
-                      onValueChange={() => handleFormToggle(form.id)}
-                      color="primary"
-                    />
-                    
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">{form.name}</p>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-sm text-default-500">
-                          <span className="text-default-400">Status:</span> <span className="font-medium capitalize">{form.status}</span>
-                        </span>
-                        {form.created_time && (
-                          <span className="text-sm text-default-400">
-                            Created {new Date(form.created_time).toLocaleDateString()}
+                  <CardBody className="p-6">
+                    <div className="flex items-center gap-4">
+                      <Checkbox
+                        isSelected={selectedFormIds.has(form.id)}
+                        onValueChange={() => handleFormToggle(form.id)}
+                        color="primary"
+                      />
+
+                      <div className="flex-1">
+                        <p className="text-lg font-semibold">{form.name}</p>
+                        <div className="flex items-center gap-4 mt-1">
+                          <span className="text-sm text-default-500">
+                            <span className="text-default-400">Status:</span>{" "}
+                            <span className="font-medium capitalize">
+                              {form.status}
+                            </span>
                           </span>
-                        )}
+                          {form.created_time && (
+                            <span className="text-sm text-default-400">
+                              Created{" "}
+                              {new Date(form.created_time).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </CardBody>
+                </Card>
               ))}
             </div>
 
@@ -258,8 +289,12 @@ export default function FormSelectionView() {
             {isSyncing && (
               <div className="p-4 bg-primary-50 dark:bg-primary-100/10 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Initiating sync...</span>
-                  <span className="text-sm text-default-500">{syncProgress}%</span>
+                  <span className="text-sm font-medium">
+                    Initiating sync...
+                  </span>
+                  <span className="text-sm text-default-500">
+                    {syncProgress}%
+                  </span>
                 </div>
                 <Progress value={syncProgress} color="primary" size="sm" />
                 <p className="text-xs text-default-500 mt-2">
@@ -281,7 +316,7 @@ export default function FormSelectionView() {
               >
                 Back
               </Button>
-              
+
               <div className="flex gap-3">
                 <Button
                   variant="flat"
@@ -291,7 +326,7 @@ export default function FormSelectionView() {
                 >
                   Skip for now
                 </Button>
-                
+
                 <Button
                   color="primary"
                   size="lg"
@@ -299,10 +334,14 @@ export default function FormSelectionView() {
                   isLoading={isSyncing}
                   isDisabled={selectedFormIds.size === 0}
                   endContent={
-                    !isSyncing && <Icon icon="solar:alt-arrow-right-linear" width={20} />
+                    !isSyncing && (
+                      <Icon icon="solar:alt-arrow-right-linear" width={20} />
+                    )
                   }
                 >
-                  {selectedFormIds.size === 0 ? "Continue" : `Sync ${selectedFormIds.size} Form${selectedFormIds.size !== 1 ? 's' : ''}`}
+                  {selectedFormIds.size === 0
+                    ? "Continue"
+                    : `Sync ${selectedFormIds.size} Form${selectedFormIds.size !== 1 ? "s" : ""}`}
                 </Button>
               </div>
             </div>

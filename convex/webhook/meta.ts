@@ -1,6 +1,10 @@
 import { v } from "convex/values";
-import { internalMutation, internalAction, internalQuery } from "../_generated/server";
 import { internal } from "../_generated/api";
+import {
+  internalAction,
+  internalMutation,
+  internalQuery,
+} from "../_generated/server";
 
 // Process incoming webhook from Meta
 export const processWebhook = internalMutation({
@@ -15,19 +19,21 @@ export const processWebhook = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     // Verify webhook signature if provided
     // Note: Signature verification will be done in a separate action
     let verified = false;
     if (args.signature) {
       // For now, mark as unverified - actual verification needs Node.js runtime
-      console.log("Webhook signature provided but verification skipped in mutation");
+      console.log(
+        "Webhook signature provided but verification skipped in mutation",
+      );
       verified = false;
     }
 
     // Extract lead IDs from the payload
     const leadInfo = extractLeadInfo(args.payload);
-    
+
     // Store webhook event for debugging
     await ctx.db.insert("metaWebhookEvents", {
       pageId: leadInfo.length > 0 ? leadInfo[0].pageId : undefined,
@@ -36,7 +42,7 @@ export const processWebhook = internalMutation({
       signature: args.signature,
       verified,
       processed: false,
-      leadIds: leadInfo.map(l => l.leadId),
+      leadIds: leadInfo.map((l) => l.leadId),
       createdAt: now,
     });
 
@@ -70,7 +76,7 @@ export const fetchAndStoreLead = internalAction({
       // Get the integration for this page
       const integration = await ctx.runQuery(
         internal.integration.meta.getIntegrationByPageId,
-        { pageId: args.pageId }
+        { pageId: args.pageId },
       );
 
       if (!integration) {
@@ -88,14 +94,14 @@ export const fetchAndStoreLead = internalAction({
       try {
         // Fetch the lead details from Meta
         const lead = await metaAPI.getLead(args.leadId);
-        
+
         // Parse and store the lead
         // Convert Meta field format to our storage format
-        const fieldData = (lead.field_data || []).map(field => ({
+        const fieldData = (lead.field_data || []).map((field) => ({
           name: field.name,
-          value: field.values?.join(", ") || "" // Join multiple values with comma
+          value: field.values?.join(", ") || "", // Join multiple values with comma
         }));
-        
+
         const leadData = {
           leadId: lead.id,
           formId: lead.form_id || args.formId || "unknown_form",
@@ -105,8 +111,8 @@ export const fetchAndStoreLead = internalAction({
           campaignId: lead.campaign_id,
           campaignName: lead.campaign_name,
           fieldData,
-          createdTime: lead.created_time 
-            ? new Date(lead.created_time).getTime() 
+          createdTime: lead.created_time
+            ? new Date(lead.created_time).getTime()
             : args.createdTime || Date.now(),
           platform: lead.platform || "fb",
           isOrganic: lead.is_organic ?? !lead.ad_id,
@@ -133,7 +139,7 @@ export const fetchAndStoreLead = internalAction({
       }
     } catch (error) {
       console.error(`Failed to fetch and store lead ${args.leadId}:`, error);
-      
+
       // Store webhook event for manual retry if needed
       await ctx.runMutation(internal.webhook.meta.logFailedLead, {
         leadId: args.leadId,
@@ -154,7 +160,7 @@ export const processPendingWebhooks = internalAction({
     // Get unprocessed webhook events
     const pendingEvents = await ctx.runQuery(
       internal.webhook.meta._getPendingEvents,
-      { limit: 10 }
+      { limit: 10 },
     );
 
     for (const event of pendingEvents) {
@@ -178,7 +184,7 @@ export const processPendingWebhooks = internalAction({
         });
       } catch (error) {
         console.error(`Failed to process webhook event ${event._id}:`, error);
-        
+
         // Mark as failed
         await ctx.runMutation(internal.webhook.meta.markWebhookFailed, {
           eventId: event._id,
@@ -191,7 +197,7 @@ export const processPendingWebhooks = internalAction({
   },
 });
 
-// Internal query to get pending webhook events  
+// Internal query to get pending webhook events
 export const _getPendingEvents = internalQuery({
   args: { limit: v.number() },
   returns: v.array(
@@ -199,15 +205,15 @@ export const _getPendingEvents = internalQuery({
       _id: v.id("metaWebhookEvents"),
       payload: v.string(),
       pageId: v.optional(v.string()),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const events = await ctx.db
       .query("metaWebhookEvents")
       .withIndex("byProcessed", (q) => q.eq("processed", false))
       .take(args.limit);
-    
-    return events.map(e => ({
+
+    return events.map((e) => ({
       _id: e._id,
       payload: e.payload,
       pageId: e.pageId,
@@ -310,18 +316,20 @@ function extractLeadInfo(payload: WebhookPayload): Array<{
 
   for (const entry of payload.entry || []) {
     const pageId = entry.id;
-    
+
     for (const change of entry.changes || []) {
       if (change.field === "leadgen" && change.value) {
         const value = change.value;
-        
+
         if (value.leadgen_id) {
           leadInfo.push({
             leadId: value.leadgen_id,
             pageId: pageId || value.page_id || "",
             formId: value.form_id,
             adId: value.ad_id || value.adgroup_id,
-            createdTime: value.created_time ? value.created_time * 1000 : undefined,
+            createdTime: value.created_time
+              ? value.created_time * 1000
+              : undefined,
           });
         }
       }

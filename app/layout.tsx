@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import "@/style/globals.css";
-import { Providers } from "@/components/Providers";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
+import { Providers } from "@/components/Providers";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",

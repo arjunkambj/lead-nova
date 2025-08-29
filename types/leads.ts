@@ -1,4 +1,4 @@
-import { Doc, Id } from "@/convex/_generated/dataModel";
+import type { Doc, Id } from "@/convex/_generated/dataModel";
 
 // Filter configuration types
 export interface LeadFilters {
@@ -42,7 +42,14 @@ export interface KanbanStage {
 }
 
 // Field update types
-export type LeadFieldValue = string | number | boolean | Id<"users"> | Id<"leadTags">[] | null | undefined;
+export type LeadFieldValue =
+  | string
+  | number
+  | boolean
+  | Id<"users">
+  | Id<"leadTags">[]
+  | null
+  | undefined;
 
 export interface BulkUpdateData {
   stage?: string;
@@ -67,7 +74,21 @@ export interface LeadView {
 export interface CustomField {
   name: string;
   label: string;
-  fieldType: "text" | "number" | "date" | "datetime" | "select" | "multiselect" | "checkbox" | "email" | "phone" | "url" | "currency" | "percent" | "textarea" | "richtext";
+  fieldType:
+    | "text"
+    | "number"
+    | "date"
+    | "datetime"
+    | "select"
+    | "multiselect"
+    | "checkbox"
+    | "email"
+    | "phone"
+    | "url"
+    | "currency"
+    | "percent"
+    | "textarea"
+    | "richtext";
   options?: string[];
   required: boolean;
   defaultValue?: string;
@@ -80,9 +101,9 @@ export interface CustomField {
 }
 
 // Activity types
-export type ActivityType = 
+export type ActivityType =
   | "created"
-  | "updated" 
+  | "updated"
   | "stage_changed"
   | "assigned"
   | "note_added"

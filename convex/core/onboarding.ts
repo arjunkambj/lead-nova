@@ -1,16 +1,19 @@
-import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { mutation, query, MutationCtx } from "../_generated/server";
-import { Doc, Id } from "../_generated/dataModel";
+import { v } from "convex/values";
+import type { Doc, Id } from "../_generated/dataModel";
+import { type MutationCtx, mutation, query } from "../_generated/server";
 
 async function updateExistingOrganization(
   ctx: MutationCtx,
   user: Doc<"users">,
-  args: { name: string; mobileNumber?: string; operatingCity?: string }
+  args: { name: string; mobileNumber?: string; operatingCity?: string },
 ) {
-  const organizationId = user.organizationId!;
+  if (!user.organizationId) {
+    throw new Error("User must belong to an organization");
+  }
+  const organizationId = user.organizationId;
   const organization = await ctx.db.get(organizationId);
-  
+
   if (!organization) {
     throw new Error("Organization not found");
   }
@@ -21,7 +24,7 @@ async function updateExistingOrganization(
   }
 
   const now = Date.now();
-  
+
   // Update the organization
   await ctx.db.patch(organizationId, {
     name: args.name,
@@ -34,7 +37,7 @@ async function updateExistingOrganization(
   const onboarding = await ctx.db
     .query("onboarding")
     .withIndex("byUserOrganization", (q) =>
-      q.eq("userId", user._id).eq("organizationId", organizationId)
+      q.eq("userId", user._id).eq("organizationId", organizationId),
     )
     .first();
 
@@ -49,7 +52,7 @@ async function updateExistingOrganization(
       createdAt: now,
       updatedAt: now,
     });
-    
+
     return {
       success: true,
       organizationId,
@@ -93,25 +96,27 @@ export const createOrganization = mutation({
     // If user already has an organization, check if it exists and update it
     if (user.organizationId) {
       const existingOrg = await ctx.db.get(user.organizationId);
-      
+
       // If organization exists, update it
       if (existingOrg) {
         return await updateExistingOrganization(ctx, user, args);
       }
-      
+
       // Organization doesn't exist despite user having organizationId
       // Clean up the stale reference and create a new organization
-      console.warn(`User ${userId} had stale organizationId ${user.organizationId}. Creating new organization.`);
+      console.warn(
+        `User ${userId} had stale organizationId ${user.organizationId}. Creating new organization.`,
+      );
       const now = Date.now();
       await ctx.db.patch(userId, {
         organizationId: undefined,
         updatedAt: now,
       });
-      
+
       // Refresh user object without organizationId
       const updatedUser = await ctx.db.get(userId);
       if (!updatedUser) throw new Error("User not found after update");
-      
+
       // Continue with normal creation flow below
     }
 
@@ -138,12 +143,12 @@ export const createOrganization = mutation({
     const existingOnboarding = await ctx.db
       .query("onboarding")
       .withIndex("byUserOrganization", (q) =>
-        q.eq("userId", userId).eq("organizationId", organizationId)
+        q.eq("userId", userId).eq("organizationId", organizationId),
       )
       .first();
 
     let onboardingId: Id<"onboarding">;
-    
+
     if (existingOnboarding) {
       // Use existing onboarding record
       onboardingId = existingOnboarding._id;
@@ -176,7 +181,6 @@ export const createOrganization = mutation({
   },
 });
 
-
 export const updateOnboardingStep = mutation({
   args: {
     step: v.number(),
@@ -193,11 +197,12 @@ export const updateOnboardingStep = mutation({
     if (!user || !user.organizationId) {
       throw new Error("User or organization not found");
     }
+    const organizationId = user.organizationId;
 
     const onboarding = await ctx.db
       .query("onboarding")
-      .withIndex("byUserOrganization", (q) => 
-        q.eq("userId", userId).eq("organizationId", user.organizationId!)
+      .withIndex("byUserOrganization", (q) =>
+        q.eq("userId", userId).eq("organizationId", organizationId),
       )
       .first();
 
@@ -231,11 +236,12 @@ export const completeOnboarding = mutation({
     if (!user || !user.organizationId) {
       throw new Error("User or organization not found");
     }
+    const organizationId = user.organizationId;
 
     const onboarding = await ctx.db
       .query("onboarding")
-      .withIndex("byUserOrganization", (q) => 
-        q.eq("userId", userId).eq("organizationId", user.organizationId!)
+      .withIndex("byUserOrganization", (q) =>
+        q.eq("userId", userId).eq("organizationId", organizationId),
       )
       .first();
 
@@ -244,7 +250,7 @@ export const completeOnboarding = mutation({
     }
 
     const now = Date.now();
-    
+
     await ctx.db.patch(onboarding._id, {
       isCompleted: true,
       completedAt: now,
@@ -278,7 +284,7 @@ export const getOnboardingStatus = query({
         mobileNumber: v.optional(v.string()),
         operatingCity: v.optional(v.string()),
       }),
-    })
+    }),
   ),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
@@ -287,10 +293,11 @@ export const getOnboardingStatus = query({
     const user = await ctx.db.get(userId);
     if (!user || !user.organizationId) return null;
 
+    const organizationId = user.organizationId;
     const onboarding = await ctx.db
       .query("onboarding")
-      .withIndex("byUserOrganization", (q) => 
-        q.eq("userId", userId).eq("organizationId", user.organizationId!)
+      .withIndex("byUserOrganization", (q) =>
+        q.eq("userId", userId).eq("organizationId", organizationId),
       )
       .first();
 
@@ -334,11 +341,12 @@ export const skipOnboardingStep = mutation({
     if (!user || !user.organizationId) {
       throw new Error("User or organization not found");
     }
+    const organizationId = user.organizationId;
 
     const onboarding = await ctx.db
       .query("onboarding")
-      .withIndex("byUserOrganization", (q) => 
-        q.eq("userId", userId).eq("organizationId", user.organizationId!)
+      .withIndex("byUserOrganization", (q) =>
+        q.eq("userId", userId).eq("organizationId", organizationId),
       )
       .first();
 
@@ -382,7 +390,6 @@ export const skipOnboardingStep = mutation({
   },
 });
 
-
 export const resetOnboarding = mutation({
   args: {},
   returns: v.object({
@@ -396,11 +403,12 @@ export const resetOnboarding = mutation({
     if (!user || !user.organizationId) {
       throw new Error("User or organization not found");
     }
+    const organizationId = user.organizationId;
 
     const onboarding = await ctx.db
       .query("onboarding")
-      .withIndex("byUserOrganization", (q) => 
-        q.eq("userId", userId).eq("organizationId", user.organizationId!)
+      .withIndex("byUserOrganization", (q) =>
+        q.eq("userId", userId).eq("organizationId", organizationId),
       )
       .first();
 
@@ -409,7 +417,7 @@ export const resetOnboarding = mutation({
       const now = Date.now();
       await ctx.db.insert("onboarding", {
         userId,
-        organizationId: user.organizationId,
+        organizationId: organizationId,
         onboardingStep: 1,
         isCompleted: false,
         isMetaConnected: false,
@@ -417,26 +425,26 @@ export const resetOnboarding = mutation({
         createdAt: now,
         updatedAt: now,
       });
-      
+
       // Reset user onboarded status
       await ctx.db.patch(userId, {
         isOnboarded: false,
         updatedAt: now,
       });
-      
+
       return { success: true };
     }
 
     const now = Date.now();
-    
+
     // Properly disconnect all Meta integrations for this organization
     const metaIntegrations = await ctx.db
       .query("metaIntegrations")
       .withIndex("byOrganization", (q) =>
-        q.eq("organizationId", user.organizationId!)
+        q.eq("organizationId", organizationId),
       )
       .collect();
-    
+
     // Deactivate all Meta integrations
     for (const integration of metaIntegrations) {
       await ctx.db.patch(integration._id, {
@@ -444,7 +452,7 @@ export const resetOnboarding = mutation({
         updatedAt: now,
       });
     }
-    
+
     // Reset onboarding record completely
     await ctx.db.patch(onboarding._id, {
       onboardingStep: 1,
@@ -464,4 +472,3 @@ export const resetOnboarding = mutation({
     return { success: true };
   },
 });
-

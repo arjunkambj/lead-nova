@@ -1,39 +1,38 @@
 "use client";
 
-import MainHeader from "@/components/shared/MainHeader";
-import { 
-  Button, 
-  Skeleton, 
+import {
+  addToast,
+  Button,
+  Input,
   Modal,
-  ModalContent,
-  ModalHeader,
   ModalBody,
+  ModalContent,
   ModalFooter,
-  Input
+  ModalHeader,
+  Skeleton,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import MainHeader from "@/components/shared/MainHeader";
 import { useDashboardData } from "@/hooks/useDashboard";
 import { useResetEverything } from "@/hooks/useUser";
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { addToast } from "@heroui/react";
-import { useRouter } from "next/navigation";
-
-import UserDetailsCard from "./UserDetailsCard";
-import OrganizationOverviewCard from "./OrganizationOverviewCard";
 import LeadStatisticsCard from "./LeadStatisticsCard";
-import SyncStatusCard from "./SyncStatusCard";
-import RecentLeadsCard from "./RecentLeadsCard";
+import OrganizationOverviewCard from "./OrganizationOverviewCard";
 import QuickActionsGrid from "./QuickActionsGrid";
+import RecentLeadsCard from "./RecentLeadsCard";
+import SyncStatusCard from "./SyncStatusCard";
+import UserDetailsCard from "./UserDetailsCard";
 
 export default function OverviewView() {
   const router = useRouter();
   const dashboardData = useDashboardData(5);
   const resetEverything = useResetEverything();
-  
+
   const [isResettingEverything, setIsResettingEverything] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
-  
+
   const prevSyncJobRef = useRef<string | null>(null);
 
   const user = dashboardData?.user;
@@ -50,18 +49,28 @@ export default function OverviewView() {
       superAdmin: { label: "Super Admin", color: "danger" as const },
       oppsDev: { label: "Ops Dev", color: "warning" as const },
     };
-    return roleMap[role as keyof typeof roleMap] || { label: "Unknown", color: "default" as const };
+    return (
+      roleMap[role as keyof typeof roleMap] || {
+        label: "Unknown",
+        color: "default" as const,
+      }
+    );
   }, []);
 
-  const roleInfo = useMemo(() => getUserRoleDisplay(user?.role), [user?.role, getUserRoleDisplay]);
+  const roleInfo = useMemo(
+    () => getUserRoleDisplay(user?.role),
+    [user?.role, getUserRoleDisplay],
+  );
 
   useEffect(() => {
     if (syncStatus) {
       const currentJobId = syncStatus.currentJob?._id || null;
       const prevJobId = prevSyncJobRef.current;
-      
+
       if (prevJobId && !currentJobId) {
-        const completedJob = syncStatus.recentJobs.find((job) => job._id === prevJobId);
+        const completedJob = syncStatus.recentJobs.find(
+          (job) => job._id === prevJobId,
+        );
         if (completedJob) {
           if (completedJob.status === "completed") {
             addToast({
@@ -78,7 +87,7 @@ export default function OverviewView() {
           }
         }
       }
-      
+
       prevSyncJobRef.current = currentJobId;
     }
   }, [syncStatus]);
@@ -95,17 +104,17 @@ export default function OverviewView() {
 
     setIsResettingEverything(true);
     setShowResetModal(false);
-    
+
     try {
       const result = await resetEverything();
-      
+
       if (result.success) {
         addToast({
           title: "Reset Complete",
           description: result.message,
           color: "success",
         });
-        
+
         setTimeout(() => {
           router.push("/onboarding/create-organization");
         }, 1000);
@@ -113,7 +122,8 @@ export default function OverviewView() {
     } catch (error) {
       addToast({
         title: "Reset Failed",
-        description: error instanceof Error ? error.message : "Failed to reset everything",
+        description:
+          error instanceof Error ? error.message : "Failed to reset everything",
         color: "danger",
       });
       setIsResettingEverything(false);
@@ -144,7 +154,7 @@ export default function OverviewView() {
   return (
     <div className="flex flex-col gap-1">
       <MainHeader title="Overview" />
-      
+
       <div className="flex-1 space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold text-foreground">
@@ -159,7 +169,7 @@ export default function OverviewView() {
           </Button>
         </div>
 
-        <UserDetailsCard 
+        <UserDetailsCard
           user={user}
           organization={organization}
           roleInfo={roleInfo}
@@ -175,7 +185,7 @@ export default function OverviewView() {
 
         <LeadStatisticsCard stats={stats} />
 
-        <SyncStatusCard 
+        <SyncStatusCard
           syncStatus={syncStatus}
           prevSyncJobId={prevSyncJobRef.current}
         />
@@ -185,8 +195,8 @@ export default function OverviewView() {
         <QuickActionsGrid />
       </div>
 
-      <Modal 
-        isOpen={showResetModal} 
+      <Modal
+        isOpen={showResetModal}
         onClose={handleModalClose}
         size="md"
         placement="center"
@@ -194,12 +204,16 @@ export default function OverviewView() {
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1">
             <h3 className="text-danger">Reset Everything</h3>
-            <p className="text-xs text-default-500 font-normal">This action cannot be undone</p>
+            <p className="text-xs text-default-500 font-normal">
+              This action cannot be undone
+            </p>
           </ModalHeader>
           <ModalBody>
             <div className="space-y-4">
               <div className="p-3 bg-danger-50 dark:bg-danger-900/20 rounded-lg">
-                <p className="text-sm text-danger font-medium mb-2">This will permanently delete:</p>
+                <p className="text-sm text-danger font-medium mb-2">
+                  This will permanently delete:
+                </p>
                 <ul className="text-xs text-danger-600 dark:text-danger-400 space-y-1 list-disc list-inside">
                   <li>All your leads and lead data</li>
                   <li>All Meta/Facebook integrations</li>
@@ -209,7 +223,10 @@ export default function OverviewView() {
                 </ul>
               </div>
               <div className="space-y-2">
-                <p className="text-sm">To confirm, type <span className="font-mono font-bold">RESET</span> below:</p>
+                <p className="text-sm">
+                  To confirm, type{" "}
+                  <span className="font-mono font-bold">RESET</span> below:
+                </p>
                 <Input
                   placeholder="Type RESET to confirm"
                   value={resetConfirmText}
@@ -223,10 +240,7 @@ export default function OverviewView() {
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button 
-              variant="light" 
-              onPress={handleModalClose}
-            >
+            <Button variant="light" onPress={handleModalClose}>
               Cancel
             </Button>
             <Button

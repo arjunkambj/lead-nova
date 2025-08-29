@@ -1,11 +1,11 @@
 "use client";
 
-import { Icon } from "@iconify/react";
 import { cn } from "@heroui/theme";
-import Link from "next/link";
+import { Icon } from "@iconify/react";
 import type { Route } from "next";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import { footerItems } from "@/constants/dashboard-sidebar";
 
@@ -25,7 +25,7 @@ export const FooterItems = () => {
             "no-underline w-full",
             isActive(item.href || "")
               ? "bg-primary/10 text-primary font-medium"
-              : "text-default-600 hover:text-default-900 hover:bg-default-100"
+              : "text-default-600 hover:text-default-900 hover:bg-default-100",
           )}
           href={(item.href || "/overview") as Route}
         >
@@ -39,7 +39,7 @@ export const FooterItems = () => {
           <span className="text-sm font-medium">{item.label}</span>
         </Link>
       )),
-    [isActive]
+    [isActive],
   );
 
   return <div className="flex gap-1 flex-col pt-4">{footerItemsContent}</div>;

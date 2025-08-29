@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Logo from "../shared/Logo";
-import { Icon } from "@iconify/react";
-import Link from "next/link";
-import { homeNavLinks } from "@/constants/homeNavlink";
 import { Button } from "@heroui/react";
+import { Icon } from "@iconify/react";
 import { Authenticated, Unauthenticated } from "convex/react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { homeNavLinks } from "@/constants/homeNavlink";
+import Logo from "../shared/Logo";
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -72,12 +72,17 @@ export default function Navbar() {
         </Unauthenticated>
 
         <button
+          type="button"
           aria-label="Toggle menu"
           className="inline-flex h-9 w-9 items-center justify-center rounded-xl  md:hidden"
           onClick={toggleMobileMenu}
         >
           <Icon
-            icon={mobileOpen ? "solar:close-circle-linear" : "solar:hamburger-menu-linear"}
+            icon={
+              mobileOpen
+                ? "solar:close-circle-linear"
+                : "solar:hamburger-menu-linear"
+            }
             width={24}
             height={24}
           />

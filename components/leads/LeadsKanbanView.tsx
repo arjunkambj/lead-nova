@@ -1,11 +1,11 @@
 "use client";
 
-import React, { memo, useMemo } from "react";
 import { Card, CardBody, Spinner } from "@heroui/react";
+import { memo, useMemo } from "react";
+import type { Id } from "@/convex/_generated/dataModel";
 // import { Icon } from "@iconify/react";
 import { useLeadsKanban } from "@/hooks/useLeads";
-import { Id } from "@/convex/_generated/dataModel";
-import type { LeadFilters, EnrichedLead } from "@/types/leads";
+import type { EnrichedLead, LeadFilters } from "@/types/leads";
 
 interface LeadsKanbanViewProps {
   filters?: LeadFilters;
@@ -13,22 +13,24 @@ interface LeadsKanbanViewProps {
 }
 
 // Memoized card component for better performance
-const LeadCard = memo(function LeadCard({ 
-  lead, 
-  onLeadClick 
-}: { 
-  lead: EnrichedLead; 
+const LeadCard = memo(function LeadCard({
+  lead,
+  onLeadClick,
+}: {
+  lead: EnrichedLead;
   onLeadClick?: (leadId: Id<"leads">) => void;
 }) {
   return (
-    <Card 
+    <Card
       key={lead._id}
       isPressable
       onPress={() => onLeadClick?.(lead._id)}
       className="cursor-pointer"
     >
       <CardBody className="p-3">
-        <p className="font-medium">{lead.fullName || lead.email || "Unnamed Lead"}</p>
+        <p className="font-medium">
+          {lead.fullName || lead.email || "Unnamed Lead"}
+        </p>
         {lead.company && (
           <p className="text-sm text-default-500">{lead.company}</p>
         )}
@@ -50,7 +52,7 @@ const LeadCard = memo(function LeadCard({
 // Memoized stage column component
 const StageColumn = memo(function StageColumn({
   stage,
-  onLeadClick
+  onLeadClick,
 }: {
   stage: {
     stage: string;
@@ -63,7 +65,9 @@ const StageColumn = memo(function StageColumn({
   return (
     <div className="min-w-[300px]">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold">{stage.stageInfo?.label || stage.stage}</h3>
+        <h3 className="text-lg font-semibold">
+          {stage.stageInfo?.label || stage.stage}
+        </h3>
         <p className="text-sm text-default-500">{stage.count} leads</p>
       </div>
       <div className="space-y-2">
@@ -75,15 +79,23 @@ const StageColumn = memo(function StageColumn({
   );
 });
 
-export const LeadsKanbanView = memo(function LeadsKanbanView({ filters, onLeadClick }: LeadsKanbanViewProps) {
+export const LeadsKanbanView = memo(function LeadsKanbanView({
+  filters,
+  onLeadClick,
+}: LeadsKanbanViewProps) {
   const { stages, isLoading } = useLeadsKanban(filters);
 
   // Memoize the rendered stages to prevent unnecessary re-renders
   const renderedStages = useMemo(
-    () => stages.map((stage) => (
-      <StageColumn key={stage.stage} stage={stage} onLeadClick={onLeadClick} />
-    )),
-    [stages, onLeadClick]
+    () =>
+      stages.map((stage) => (
+        <StageColumn
+          key={stage.stage}
+          stage={stage}
+          onLeadClick={onLeadClick}
+        />
+      )),
+    [stages, onLeadClick],
   );
 
   if (isLoading) {
@@ -96,9 +108,7 @@ export const LeadsKanbanView = memo(function LeadsKanbanView({ filters, onLeadCl
 
   return (
     <div className="p-6">
-      <div className="flex gap-4 overflow-x-auto">
-        {renderedStages}
-      </div>
+      <div className="flex gap-4 overflow-x-auto">{renderedStages}</div>
     </div>
   );
 });

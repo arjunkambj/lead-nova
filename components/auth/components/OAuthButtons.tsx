@@ -1,16 +1,11 @@
 "use client";
 
-import React, { useCallback } from "react";
-import { Button } from "@heroui/react";
+import { addToast, Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { addToast } from "@heroui/react";
+import React, { useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
-interface OAuthButtonsProps {
-  mode?: "login" | "signup";
-}
-
-const OAuthButtons = React.memo(function OAuthButtons({}: OAuthButtonsProps) {
+const OAuthButtons = React.memo(function OAuthButtons() {
   const { handleGoogleSignIn } = useAuth();
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
 
@@ -48,7 +43,11 @@ const OAuthButtons = React.memo(function OAuthButtons({}: OAuthButtonsProps) {
       </Button>
       <Button
         startContent={
-          <Icon className="text-default-600" icon="fa6-brands:apple" width={20} />
+          <Icon
+            className="text-default-600"
+            icon="fa6-brands:apple"
+            width={20}
+          />
         }
         variant="flat"
         fullWidth

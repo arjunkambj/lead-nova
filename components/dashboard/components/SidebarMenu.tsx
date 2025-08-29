@@ -1,12 +1,12 @@
 "use client";
 
 import { Accordion, AccordionItem } from "@heroui/accordion";
-import { Icon } from "@iconify/react";
 import { cn } from "@heroui/theme";
-import Link from "next/link";
+import { Icon } from "@iconify/react";
 import type { Route } from "next";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 export type SidebarItem = {
   key: string;
@@ -29,7 +29,7 @@ const SidebarMenu = ({ items, className }: SidebarMenuProps) => {
     (href: string) => {
       return pathname === href;
     },
-    [pathname]
+    [pathname],
   );
 
   // Memoize defaultExpandedKeys to prevent hydration issues
@@ -49,7 +49,7 @@ const SidebarMenu = ({ items, className }: SidebarMenuProps) => {
           "no-underline",
           isActive(item.href || "")
             ? "bg-primary text-white font-medium shadow-sm"
-            : "text-default-800 hover:text-default-900 hover:bg-default-200"
+            : "text-default-800 hover:text-default-900 hover:bg-default-200",
         )}
         href={(item.href || "/overview") as Route}
         prefetch={true}
@@ -64,7 +64,7 @@ const SidebarMenu = ({ items, className }: SidebarMenuProps) => {
         <span className="text-sm font-medium truncate">{item.title}</span>
       </Link>
     ),
-    [isActive]
+    [isActive],
   );
 
   const renderCategory = useCallback(
@@ -109,7 +109,7 @@ const SidebarMenu = ({ items, className }: SidebarMenuProps) => {
         </div>
       </AccordionItem>
     ),
-    [renderMenuItem]
+    [renderMenuItem],
   );
 
   const accordionContent = useMemo(
@@ -123,7 +123,7 @@ const SidebarMenu = ({ items, className }: SidebarMenuProps) => {
         {items.map(renderCategory)}
       </Accordion>
     ),
-    [defaultExpandedKeys, items, renderCategory]
+    [defaultExpandedKeys, items, renderCategory],
   );
 
   return <nav className={cn("w-full", className)}>{accordionContent}</nav>;

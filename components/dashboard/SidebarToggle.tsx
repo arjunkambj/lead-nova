@@ -23,9 +23,11 @@ export default function SidebarToggle() {
       size="sm"
       onPress={handleToggle}
     >
-      <Icon 
-        icon={isOpen ? "solar:hamburger-menu-linear" : "solar:hamburger-menu-linear"} 
-        width={20} 
+      <Icon
+        icon={
+          isOpen ? "solar:hamburger-menu-linear" : "solar:hamburger-menu-linear"
+        }
+        width={20}
       />
     </Button>
   );

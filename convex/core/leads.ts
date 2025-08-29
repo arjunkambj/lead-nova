@@ -1,12 +1,12 @@
-import { v } from "convex/values";
-import { query, mutation } from "../_generated/server";
-import { Id, Doc } from "../_generated/dataModel";
 import { paginationOptsValidator } from "convex/server";
+import { v } from "convex/values";
+import type { Doc, Id } from "../_generated/dataModel";
+import { mutation, query } from "../_generated/server";
 import { getAuthUserId } from "../helpers/auth";
 
 // Get paginated leads for table view - optimized with proper indexing
 export const getLeadsTable = query({
-  args: { 
+  args: {
     paginationOpts: paginationOptsValidator,
     filters: v.optional(v.string()), // JSON string of filter config
     sorting: v.optional(v.string()), // JSON string of sort config
@@ -22,66 +22,56 @@ export const getLeadsTable = query({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     const filters = args.filters ? JSON.parse(args.filters) : {};
-    const sortConfig = args.sorting ? JSON.parse(args.sorting) : { field: "createdAt", direction: "desc" };
+    const sortConfig = args.sorting
+      ? JSON.parse(args.sorting)
+      : { field: "createdAt", direction: "desc" };
 
-    // Build query with proper indexes
-    let query;
-    
-    // Use the most specific index based on filters
-    if (filters.stage && filters.priority) {
-      // For stage + priority, we'll need to filter priority in memory
-      query = ctx.db
-        .query("leads")
-        .withIndex("byOrganizationAndStage", q => 
-          q.eq("organizationId", user.organizationId!)
-           .eq("stage", filters.stage)
-        );
-    } else if (filters.stage) {
-      query = ctx.db
-        .query("leads")
-        .withIndex("byOrganizationAndStage", q => 
-          q.eq("organizationId", user.organizationId!)
-           .eq("stage", filters.stage)
-        );
-    } else {
-      query = ctx.db
-        .query("leads")
-        .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!));
-    }
+    // Build query with proper indexes and sorting
+    const baseQuery = filters.stage
+      ? ctx.db
+          .query("leads")
+          .withIndex("byOrganizationAndStage", (q) =>
+            q.eq("organizationId", organizationId).eq("stage", filters.stage),
+          )
+      : ctx.db
+          .query("leads")
+          .withIndex("byOrganization", (q) =>
+            q.eq("organizationId", organizationId),
+          );
 
-    // Apply sorting direction
-    if (sortConfig.direction === "desc") {
-      query = query.order("desc");
-    } else {
-      query = query.order("asc");
-    }
+    // Apply sorting direction and paginate
+    const paginatedResult = await baseQuery
+      .order(sortConfig.direction === "desc" ? "desc" : "asc")
+      .paginate(args.paginationOpts);
 
-    // Use native pagination
-    const paginatedResult = await query.paginate(args.paginationOpts);
-    
     // Apply additional filters that can't be indexed
     let filteredLeads = paginatedResult.page;
-    
+
     // Apply priority filter if not using stage+priority combo
     if (filters.priority && !filters.stage) {
-      filteredLeads = filteredLeads.filter((lead) => lead.priority === filters.priority);
+      filteredLeads = filteredLeads.filter(
+        (lead) => lead.priority === filters.priority,
+      );
     }
-    
+
     // Apply date range filter if specified
-    if (filters.dateRange && filters.dateRange.start && filters.dateRange.end) {
+    if (filters.dateRange?.start && filters.dateRange.end) {
       const dateField = filters.dateField || "createdTime";
       const startDate = new Date(filters.dateRange.start).getTime();
       const endDate = new Date(filters.dateRange.end).getTime() + 86400000;
-      
+
       filteredLeads = filteredLeads.filter((lead) => {
-        const dateValue = lead[dateField as keyof typeof lead] as number | undefined;
+        const dateValue = lead[dateField as keyof typeof lead] as
+          | number
+          | undefined;
         if (!dateValue) return false;
         return dateValue >= startDate && dateValue <= endDate;
       });
     }
-    
+
     // Apply search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
@@ -97,40 +87,51 @@ export const getLeadsTable = query({
         );
       });
     }
-    
+
     // Apply tags filter
     if (filters.tags && filters.tags.length > 0) {
       filteredLeads = filteredLeads.filter((lead) => {
         if (!lead.tags || lead.tags.length === 0) return false;
-        return filters.tags.some((tagId: string) => lead.tags?.includes(tagId as Id<"leadTags">));
+        return filters.tags.some((tagId: string) =>
+          lead.tags?.includes(tagId as Id<"leadTags">),
+        );
       });
     }
 
     // Batch enrich leads with related data using Promise.all
-    const assignedUserIds = [...new Set(filteredLeads.map(lead => lead.assignedTo).filter(Boolean))] as Id<"users">[];
-    const tagIds = [...new Set(filteredLeads.flatMap(lead => lead.tags || []))] as Id<"leadTags">[];
-    
+    const assignedUserIds = [
+      ...new Set(filteredLeads.map((lead) => lead.assignedTo).filter(Boolean)),
+    ] as Id<"users">[];
+    const tagIds = [
+      ...new Set(filteredLeads.flatMap((lead) => lead.tags || [])),
+    ] as Id<"leadTags">[];
+
     // Fetch all related data in parallel
     const [assignedUsers, tags] = await Promise.all([
-      Promise.all(assignedUserIds.map(id => ctx.db.get(id))),
-      Promise.all(tagIds.map(id => ctx.db.get(id))),
+      Promise.all(assignedUserIds.map((id) => ctx.db.get(id))),
+      Promise.all(tagIds.map((id) => ctx.db.get(id))),
     ]);
-    
+
     // Create lookup maps for O(1) access
-    const userMap = new Map(assignedUsers.filter(Boolean).map(user => [user!._id, user]));
-    const tagMap = new Map(tags.filter(Boolean).map(tag => [tag!._id, tag]));
-    
+    const userMap = new Map(
+      assignedUsers.filter(Boolean).map((user) => [user?._id, user]),
+    );
+    const tagMap = new Map(tags.filter(Boolean).map((tag) => [tag?._id, tag]));
+
     // Enrich leads using the lookup maps
     const enrichedLeads = filteredLeads.map((lead) => ({
       ...lead,
-      assignedUser: lead.assignedTo && userMap.has(lead.assignedTo) 
-        ? {
-            id: lead.assignedTo,
-            name: userMap.get(lead.assignedTo)?.name || '',
-            image: userMap.get(lead.assignedTo)?.image,
-          } 
-        : null,
-      tagDetails: (lead.tags || []).map(tagId => tagMap.get(tagId)).filter(Boolean) as Doc<"leadTags">[],
+      assignedUser:
+        lead.assignedTo && userMap.has(lead.assignedTo)
+          ? {
+              id: lead.assignedTo,
+              name: userMap.get(lead.assignedTo)?.name || "",
+              image: userMap.get(lead.assignedTo)?.image,
+            }
+          : null,
+      tagDetails: (lead.tags || [])
+        .map((tagId) => tagMap.get(tagId))
+        .filter(Boolean) as Doc<"leadTags">[],
     }));
 
     return {
@@ -153,6 +154,7 @@ export const getLeadsKanban = query({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     const filters = args.filters ? JSON.parse(args.filters) : {};
 
@@ -160,34 +162,37 @@ export const getLeadsKanban = query({
     const [stages, allLeads] = await Promise.all([
       ctx.db
         .query("leadStages")
-        .withIndex("byOrganizationAndActive", q => 
-          q.eq("organizationId", user.organizationId!)
-           .eq("isActive", true)
+        .withIndex("byOrganizationAndActive", (q) =>
+          q.eq("organizationId", organizationId).eq("isActive", true),
         )
         .order("asc")
         .collect(),
       ctx.db
         .query("leads")
-        .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
+        .withIndex("byOrganization", (q) =>
+          q.eq("organizationId", organizationId),
+        )
         .collect(),
     ]);
-    
+
     // Apply filters
     let filteredLeads = allLeads;
-    
+
     // Apply date range filter
-    if (filters.dateRange && filters.dateRange.start && filters.dateRange.end) {
+    if (filters.dateRange?.start && filters.dateRange.end) {
       const dateField = filters.dateField || "createdTime";
       const startDate = new Date(filters.dateRange.start).getTime();
       const endDate = new Date(filters.dateRange.end).getTime() + 86400000;
-      
+
       filteredLeads = filteredLeads.filter((lead) => {
-        const dateValue = lead[dateField as keyof typeof lead] as number | undefined;
+        const dateValue = lead[dateField as keyof typeof lead] as
+          | number
+          | undefined;
         if (!dateValue) return false;
         return dateValue >= startDate && dateValue <= endDate;
       });
     }
-    
+
     // Apply search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
@@ -200,24 +205,34 @@ export const getLeadsKanban = query({
         );
       });
     }
-    
+
     // Apply priority filter
     if (filters.priority) {
-      filteredLeads = filteredLeads.filter((lead) => lead.priority === filters.priority);
+      filteredLeads = filteredLeads.filter(
+        (lead) => lead.priority === filters.priority,
+      );
     }
-    
+
     // Apply tags filter
     if (filters.tags && filters.tags.length > 0) {
       filteredLeads = filteredLeads.filter((lead) => {
         if (!lead.tags || lead.tags.length === 0) return false;
-        return filters.tags.some((tagId: string) => lead.tags?.includes(tagId as Id<"leadTags">));
+        return filters.tags.some((tagId: string) =>
+          lead.tags?.includes(tagId as Id<"leadTags">),
+        );
       });
     }
 
     // Batch fetch all related data
-    const assignedUserIds = [...new Set(filteredLeads.map(lead => lead.assignedTo).filter(Boolean))] as Id<"users">[];
-    const assignedUsers = await Promise.all(assignedUserIds.map(id => ctx.db.get(id)));
-    const userMap = new Map(assignedUsers.filter(Boolean).map(user => [user!._id, user]));
+    const assignedUserIds = [
+      ...new Set(filteredLeads.map((lead) => lead.assignedTo).filter(Boolean)),
+    ] as Id<"users">[];
+    const assignedUsers = await Promise.all(
+      assignedUserIds.map((id) => ctx.db.get(id)),
+    );
+    const userMap = new Map(
+      assignedUsers.filter(Boolean).map((user) => [user?._id, user]),
+    );
 
     // Group leads by stage with enrichment
     const leadsByStage = stages.map((stage) => {
@@ -225,13 +240,14 @@ export const getLeadsKanban = query({
         .filter((lead) => (lead.stage || "new") === stage.name)
         .map((lead) => ({
           ...lead,
-          assignedUser: lead.assignedTo && userMap.has(lead.assignedTo)
-            ? {
-                id: lead.assignedTo,
-                name: userMap.get(lead.assignedTo)?.name || '',
-                image: userMap.get(lead.assignedTo)?.image,
-              }
-            : null,
+          assignedUser:
+            lead.assignedTo && userMap.has(lead.assignedTo)
+              ? {
+                  id: lead.assignedTo,
+                  name: userMap.get(lead.assignedTo)?.name || "",
+                  image: userMap.get(lead.assignedTo)?.image,
+                }
+              : null,
         }));
 
       return {
@@ -257,7 +273,7 @@ export const updateLeadField = mutation({
       v.boolean(),
       v.null(),
       v.id("users"),
-      v.array(v.id("leadTags"))
+      v.array(v.id("leadTags")),
     ),
   },
   returns: v.null(),
@@ -267,9 +283,10 @@ export const updateLeadField = mutation({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     const lead = await ctx.db.get(args.leadId);
-    if (!lead || lead.organizationId !== user.organizationId) {
+    if (!lead || lead.organizationId !== organizationId) {
       throw new Error("Lead not found");
     }
 
@@ -282,14 +299,14 @@ export const updateLeadField = mutation({
     // Special handling for stage changes
     if (args.field === "stage") {
       updateData.lastActivityAt = Date.now();
-      
+
       // Log activity
       await ctx.db.insert("leadActivities", {
-        organizationId: user.organizationId,
+        organizationId: organizationId,
         leadId: args.leadId,
         userId,
         activityType: "stage_changed",
-        description: `Stage changed from ${lead.stage || 'new'} to ${args.value}`,
+        description: `Stage changed from ${lead.stage || "new"} to ${args.value}`,
         metadata: JSON.stringify({ from: lead.stage, to: args.value }),
         createdAt: Date.now(),
       });
@@ -321,6 +338,7 @@ export const bulkUpdateLeads = mutation({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     let updated = 0;
     let failed = 0;
@@ -328,7 +346,7 @@ export const bulkUpdateLeads = mutation({
     for (const leadId of args.leadIds) {
       try {
         const lead = await ctx.db.get(leadId);
-        if (!lead || lead.organizationId !== user.organizationId) {
+        if (!lead || lead.organizationId !== organizationId) {
           failed++;
           continue;
         }
@@ -337,22 +355,23 @@ export const bulkUpdateLeads = mutation({
           updatedAt: Date.now(),
           lastActivityAt: Date.now(),
         };
-        
+
         if (args.updates.stage) patchData.stage = args.updates.stage;
-        if (args.updates.assignedTo) patchData.assignedTo = args.updates.assignedTo;
+        if (args.updates.assignedTo)
+          patchData.assignedTo = args.updates.assignedTo;
         if (args.updates.priority) patchData.priority = args.updates.priority;
         if (args.updates.tags) patchData.tags = args.updates.tags;
-        
+
         await ctx.db.patch(leadId, patchData);
 
         // Log activity for important changes
         if (args.updates.stage && args.updates.stage !== lead.stage) {
           await ctx.db.insert("leadActivities", {
-            organizationId: user.organizationId,
+            organizationId: organizationId,
             leadId,
             userId,
             activityType: "stage_changed",
-            description: `Bulk stage change from ${lead.stage || 'new'} to ${args.updates.stage}`,
+            description: `Bulk stage change from ${lead.stage || "new"} to ${args.updates.stage}`,
             createdAt: Date.now(),
           });
         }
@@ -387,20 +406,37 @@ export const createCustomField = mutation({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     // Get the next order number
     const existingFields = await ctx.db
       .query("leadCustomFields")
-      .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
       .collect();
 
-    const maxOrder = Math.max(0, ...existingFields.map(f => f.order));
+    const maxOrder = Math.max(0, ...existingFields.map((f) => f.order));
 
     const fieldId = await ctx.db.insert("leadCustomFields", {
-      organizationId: user.organizationId,
+      organizationId: organizationId,
       name: args.name,
       label: args.label,
-      fieldType: args.fieldType as "text" | "number" | "date" | "datetime" | "select" | "multiselect" | "checkbox" | "email" | "phone" | "url" | "currency" | "percent" | "textarea" | "richtext",
+      fieldType: args.fieldType as
+        | "text"
+        | "number"
+        | "date"
+        | "datetime"
+        | "select"
+        | "multiselect"
+        | "checkbox"
+        | "email"
+        | "phone"
+        | "url"
+        | "currency"
+        | "percent"
+        | "textarea"
+        | "richtext",
       options: args.options,
       required: args.required,
       defaultValue: args.defaultValue,
@@ -427,12 +463,12 @@ export const getCustomFields = query({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     const fields = await ctx.db
       .query("leadCustomFields")
-      .withIndex("byOrganizationAndActive", q => 
-        q.eq("organizationId", user.organizationId!)
-         .eq("isActive", true)
+      .withIndex("byOrganizationAndActive", (q) =>
+        q.eq("organizationId", organizationId).eq("isActive", true),
       )
       .order("asc")
       .collect();
@@ -451,11 +487,14 @@ export const ensureDefaultStages = mutation({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     // Check if stages already exist
     const existingStages = await ctx.db
       .query("leadStages")
-      .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
       .collect();
 
     if (existingStages.length > 0) {
@@ -464,19 +503,55 @@ export const ensureDefaultStages = mutation({
 
     // Create default stages
     const defaultStages = [
-      { name: "new", label: "New", color: "default", probability: 10, isDefault: true },
-      { name: "contacted", label: "Contacted", color: "primary", probability: 20 },
-      { name: "qualified", label: "Qualified", color: "secondary", probability: 40 },
-      { name: "proposal", label: "Proposal", color: "warning", probability: 60 },
-      { name: "negotiation", label: "Negotiation", color: "warning", probability: 80 },
-      { name: "closed-won", label: "Closed Won", color: "success", probability: 100 },
-      { name: "closed-lost", label: "Closed Lost", color: "danger", probability: 0 },
+      {
+        name: "new",
+        label: "New",
+        color: "default",
+        probability: 10,
+        isDefault: true,
+      },
+      {
+        name: "contacted",
+        label: "Contacted",
+        color: "primary",
+        probability: 20,
+      },
+      {
+        name: "qualified",
+        label: "Qualified",
+        color: "secondary",
+        probability: 40,
+      },
+      {
+        name: "proposal",
+        label: "Proposal",
+        color: "warning",
+        probability: 60,
+      },
+      {
+        name: "negotiation",
+        label: "Negotiation",
+        color: "warning",
+        probability: 80,
+      },
+      {
+        name: "closed-won",
+        label: "Closed Won",
+        color: "success",
+        probability: 100,
+      },
+      {
+        name: "closed-lost",
+        label: "Closed Lost",
+        color: "danger",
+        probability: 0,
+      },
     ];
 
     for (let i = 0; i < defaultStages.length; i++) {
       const stage = defaultStages[i];
       await ctx.db.insert("leadStages", {
-        organizationId: user.organizationId,
+        organizationId: organizationId,
         name: stage.name,
         label: stage.label,
         color: stage.color,
@@ -503,12 +578,12 @@ export const getStages = query({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     const stages = await ctx.db
       .query("leadStages")
-      .withIndex("byOrganizationAndActive", q => 
-        q.eq("organizationId", user.organizationId!)
-         .eq("isActive", true)
+      .withIndex("byOrganizationAndActive", (q) =>
+        q.eq("organizationId", organizationId).eq("isActive", true),
       )
       .order("asc")
       .collect();
@@ -531,14 +606,17 @@ export const upsertTag = mutation({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     // Check if tag exists
     const existingTags = await ctx.db
       .query("leadTags")
-      .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
       .collect();
-    
-    const existingTag = existingTags.find(t => t.name === args.name);
+
+    const existingTag = existingTags.find((t) => t.name === args.name);
 
     if (existingTag) {
       await ctx.db.patch(existingTag._id, {
@@ -551,7 +629,7 @@ export const upsertTag = mutation({
 
     // Create new tag
     const tagId = await ctx.db.insert("leadTags", {
-      organizationId: user.organizationId,
+      organizationId: organizationId,
       name: args.name,
       color: args.color,
       description: args.description,
@@ -574,10 +652,13 @@ export const getTags = query({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     const tags = await ctx.db
       .query("leadTags")
-      .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
       .order("desc")
       .collect();
 
@@ -600,7 +681,7 @@ export const getLeadActivities = query({
 
     const activities = await ctx.db
       .query("leadActivities")
-      .withIndex("byLeadAndCreatedAt", q => q.eq("leadId", args.leadId))
+      .withIndex("byLeadAndCreatedAt", (q) => q.eq("leadId", args.leadId))
       .order("desc")
       .take(limit);
 
@@ -610,13 +691,15 @@ export const getLeadActivities = query({
         const user = await ctx.db.get(activity.userId);
         return {
           ...activity,
-          user: user ? {
-            id: user._id,
-            name: user.name,
-            image: user.image,
-          } : null,
+          user: user
+            ? {
+                id: user._id,
+                name: user.name,
+                image: user.image,
+              }
+            : null,
         };
-      })
+      }),
     );
 
     return enrichedActivities;
@@ -627,7 +710,11 @@ export const getLeadActivities = query({
 export const saveView = mutation({
   args: {
     name: v.string(),
-    viewType: v.union(v.literal("table"), v.literal("kanban"), v.literal("calendar")),
+    viewType: v.union(
+      v.literal("table"),
+      v.literal("kanban"),
+      v.literal("calendar"),
+    ),
     filters: v.string(),
     sorting: v.optional(v.string()),
     columns: v.optional(v.string()),
@@ -641,20 +728,20 @@ export const saveView = mutation({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     // Get the next order number
     const existingViews = await ctx.db
       .query("leadViews")
-      .withIndex("byOrganizationAndUser", q => 
-        q.eq("organizationId", user.organizationId!)
-         .eq("userId", userId)
+      .withIndex("byOrganizationAndUser", (q) =>
+        q.eq("organizationId", organizationId).eq("userId", userId),
       )
       .collect();
 
-    const maxOrder = Math.max(0, ...existingViews.map(v => v.order));
+    const maxOrder = Math.max(0, ...existingViews.map((v) => v.order));
 
     const viewId = await ctx.db.insert("leadViews", {
-      organizationId: user.organizationId,
+      organizationId: organizationId,
       userId: args.isShared ? undefined : userId,
       name: args.name,
       viewType: args.viewType,
@@ -682,21 +769,22 @@ export const getSavedViews = query({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     // Get user's views and shared org views
     const [userViews, sharedViews] = await Promise.all([
       ctx.db
         .query("leadViews")
-        .withIndex("byOrganizationAndUser", q => 
-          q.eq("organizationId", user.organizationId!)
-           .eq("userId", userId)
+        .withIndex("byOrganizationAndUser", (q) =>
+          q.eq("organizationId", organizationId).eq("userId", userId),
         )
         .order("asc")
         .collect(),
       ctx.db
         .query("leadViews")
-        .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
-        .filter(q => q.eq(q.field("isShared"), true))
+        .withIndex("byOrganizationAndShared", (q) =>
+          q.eq("organizationId", organizationId).eq("isShared", true),
+        )
         .collect(),
     ]);
 
@@ -725,16 +813,22 @@ export const getLeadDetails = query({
     // Enrich with related data
     const [assignedUser, tags] = await Promise.all([
       lead.assignedTo ? ctx.db.get(lead.assignedTo) : null,
-      lead.tags ? Promise.all(lead.tags.map((tagId: Id<"leadTags">) => ctx.db.get(tagId))) : [],
+      lead.tags
+        ? Promise.all(
+            lead.tags.map((tagId: Id<"leadTags">) => ctx.db.get(tagId)),
+          )
+        : [],
     ]);
 
     return {
       ...lead,
-      assignedUser: assignedUser ? {
-        id: assignedUser._id,
-        name: assignedUser.name,
-        image: assignedUser.image,
-      } : null,
+      assignedUser: assignedUser
+        ? {
+            id: assignedUser._id,
+            name: assignedUser.name,
+            image: assignedUser.image,
+          }
+        : null,
       tagDetails: tags.filter(Boolean),
     };
   },
@@ -745,15 +839,19 @@ export const getLeadStats = query({
   args: {},
   returns: v.object({
     total: v.number(),
-    byStage: v.array(v.object({
-      stage: v.string(),
-      count: v.number(),
-      value: v.number(),
-    })),
-    byPriority: v.array(v.object({
-      priority: v.string(),
-      count: v.number(),
-    })),
+    byStage: v.array(
+      v.object({
+        stage: v.string(),
+        count: v.number(),
+        value: v.number(),
+      }),
+    ),
+    byPriority: v.array(
+      v.object({
+        priority: v.string(),
+        count: v.number(),
+      }),
+    ),
     recentActivity: v.number(),
     averageScore: v.number(),
   }),
@@ -763,11 +861,14 @@ export const getLeadStats = query({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     // Get all leads for the organization
     const leads = await ctx.db
       .query("leads")
-      .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
       .collect();
 
     // Calculate statistics
@@ -811,10 +912,12 @@ export const getLeadStats = query({
       value: data.value,
     }));
 
-    const byPriority = Array.from(priorityGroups.entries()).map(([priority, count]) => ({
-      priority,
-      count,
-    }));
+    const byPriority = Array.from(priorityGroups.entries()).map(
+      ([priority, count]) => ({
+        priority,
+        count,
+      }),
+    );
 
     return {
       total,
@@ -842,48 +945,53 @@ export const getDashboardData = query({
 
     const user = await ctx.db.get(userId);
     if (!user?.organizationId) throw new Error("No organization");
+    const organizationId = user.organizationId;
 
     // Fetch all data in parallel
-    const [leads, stages, tags, customFields, userViews, sharedViews] = await Promise.all([
-      ctx.db
-        .query("leads")
-        .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
-        .collect(),
-      ctx.db
-        .query("leadStages")
-        .withIndex("byOrganizationAndActive", q => 
-          q.eq("organizationId", user.organizationId!)
-           .eq("isActive", true)
-        )
-        .order("asc")
-        .collect(),
-      ctx.db
-        .query("leadTags")
-        .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
-        .order("desc")
-        .collect(),
-      ctx.db
-        .query("leadCustomFields")
-        .withIndex("byOrganizationAndActive", q => 
-          q.eq("organizationId", user.organizationId!)
-           .eq("isActive", true)
-        )
-        .order("asc")
-        .collect(),
-      ctx.db
-        .query("leadViews")
-        .withIndex("byOrganizationAndUser", q => 
-          q.eq("organizationId", user.organizationId!)
-           .eq("userId", userId)
-        )
-        .order("asc")
-        .collect(),
-      ctx.db
-        .query("leadViews")
-        .withIndex("byOrganization", q => q.eq("organizationId", user.organizationId!))
-        .filter(q => q.eq(q.field("isShared"), true))
-        .collect(),
-    ]);
+    const [leads, stages, tags, customFields, userViews, sharedViews] =
+      await Promise.all([
+        ctx.db
+          .query("leads")
+          .withIndex("byOrganization", (q) =>
+            q.eq("organizationId", organizationId),
+          )
+          .collect(),
+        ctx.db
+          .query("leadStages")
+          .withIndex("byOrganizationAndActive", (q) =>
+            q.eq("organizationId", organizationId).eq("isActive", true),
+          )
+          .order("asc")
+          .collect(),
+        ctx.db
+          .query("leadTags")
+          .withIndex("byOrganization", (q) =>
+            q.eq("organizationId", organizationId),
+          )
+          .order("desc")
+          .collect(),
+        ctx.db
+          .query("leadCustomFields")
+          .withIndex("byOrganizationAndActive", (q) =>
+            q.eq("organizationId", organizationId).eq("isActive", true),
+          )
+          .order("asc")
+          .collect(),
+        ctx.db
+          .query("leadViews")
+          .withIndex("byOrganizationAndUser", (q) =>
+            q.eq("organizationId", organizationId).eq("userId", userId),
+          )
+          .order("asc")
+          .collect(),
+        ctx.db
+          .query("leadViews")
+          .withIndex("byOrganization", (q) =>
+            q.eq("organizationId", organizationId),
+          )
+          .filter((q) => q.eq(q.field("isShared"), true))
+          .collect(),
+      ]);
 
     // Calculate stats from leads
     const total = leads.length;
@@ -921,10 +1029,12 @@ export const getDashboardData = query({
         count: data.count,
         value: data.value,
       })),
-      byPriority: Array.from(priorityGroups.entries()).map(([priority, count]) => ({
-        priority,
-        count,
-      })),
+      byPriority: Array.from(priorityGroups.entries()).map(
+        ([priority, count]) => ({
+          priority,
+          count,
+        }),
+      ),
       recentActivity: recentActivityCount,
       averageScore: scoreCount > 0 ? totalScore / scoreCount : 0,
     };

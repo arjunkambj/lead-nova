@@ -102,9 +102,9 @@ export default function PrivacyPage() {
             7. Meta Platform Integration
           </h2>
           <p className="text-default-700 mb-4">
-            Our integration with Meta platforms is subject to Meta&apos;s Platform
-            Terms and Developer Policies. We access only the minimum data
-            necessary to provide our lead management services.
+            Our integration with Meta platforms is subject to Meta&apos;s
+            Platform Terms and Developer Policies. We access only the minimum
+            data necessary to provide our lead management services.
           </p>
         </section>
 

@@ -1,15 +1,21 @@
 "use client";
 
-import React from "react";
-import { Button, Input, Select, SelectItem, Spinner } from "@heroui/react";
+import {
+  addToast,
+  Button,
+  Input,
+  Select,
+  SelectItem,
+  Spinner,
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
-import { useInviteTeamMembers } from "@/hooks/useOrganization";
+import React from "react";
 import {
-  useUpdateOnboardingStep,
   useOnboardingStatus,
+  useUpdateOnboardingStep,
 } from "@/hooks/useOnboarding";
+import { useInviteTeamMembers } from "@/hooks/useOrganization";
 import { useCurrentUser } from "@/hooks/useUser";
 
 interface TeamMember {
@@ -62,7 +68,7 @@ export default function TeamInviteForm() {
 
   const updateMember = (id: string, field: "email" | "role", value: string) => {
     setMembers(
-      members.map((m) => (m.id === id ? { ...m, [field]: value } : m))
+      members.map((m) => (m.id === id ? { ...m, [field]: value } : m)),
     );
     if (errors[id]) {
       const newErrors = { ...errors };
@@ -88,7 +94,7 @@ export default function TeamInviteForm() {
 
     const emails = validMembers.map((m) => m.email.toLowerCase());
     const duplicates = emails.filter(
-      (email, index) => emails.indexOf(email) !== index
+      (email, index) => emails.indexOf(email) !== index,
     );
     if (duplicates.length > 0) {
       members.forEach((member) => {
@@ -143,8 +149,7 @@ export default function TeamInviteForm() {
           });
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        router.push("/onboarding/overview" as any);
+        router.push("/onboarding/overview");
       }
     } catch (error) {
       addToast({
@@ -164,8 +169,7 @@ export default function TeamInviteForm() {
     setIsLoading(true);
     try {
       await updateOnboardingStep({ step: 4 });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      router.push("/onboarding/overview" as any);
+      router.push("/onboarding/overview");
     } catch {
       addToast({
         title: "Error",
@@ -185,9 +189,7 @@ export default function TeamInviteForm() {
             <Input
               placeholder="email@example.com"
               value={member.email}
-              onValueChange={(value) =>
-                updateMember(member.id, "email", value)
-              }
+              onValueChange={(value) => updateMember(member.id, "email", value)}
               isInvalid={!!errors[member.id]}
               errorMessage={errors[member.id]}
               className="flex-1"

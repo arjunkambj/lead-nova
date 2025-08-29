@@ -1,14 +1,14 @@
 "use client";
 
 import { Button } from "@heroui/react";
-import HeroAppBox from "./components/HeroAppBox";
 import { Icon } from "@iconify/react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
+import HeroAppBox from "./components/HeroAppBox";
 
 const AVATAR_URLS = [1, 2, 3, 4, 5].map(
-  (n) => `https://i.pravatar.cc/80?img=${n}`
+  (n) => `https://i.pravatar.cc/80?img=${n}`,
 );
 
 export default function Hero() {
@@ -73,12 +73,7 @@ export default function Hero() {
           >
             Get Started
           </Button>
-          <Button
-            as={Link}
-            href="#features"
-            variant="flat"
-            size="lg"
-          >
+          <Button as={Link} href="#features" variant="flat" size="lg">
             Learn More
           </Button>
         </motion.div>
@@ -95,4 +90,3 @@ export default function Hero() {
     </section>
   );
 }
-

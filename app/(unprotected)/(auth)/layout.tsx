@@ -1,5 +1,5 @@
-import Logo from "@/components/shared/Logo";
 import AuthRightSide from "@/components/auth/AuthRightSide";
+import Logo from "@/components/shared/Logo";
 
 export default async function AuthLayout({
   children,

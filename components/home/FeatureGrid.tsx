@@ -147,8 +147,8 @@ export default function FeatureGrid() {
 
               {/* Mini Chart Visualization */}
               <div className="grid grid-cols-4 gap-2 h-20">
-                {[40, 65, 45, 80, 55, 70, 60, 75].map((height, i) => (
-                  <div key={i} className="flex items-end">
+                {[40, 65, 45, 80, 55, 70, 60, 75].map((height) => (
+                  <div key={`chart-bar-${height}`} className="flex items-end">
                     <div
                       className="w-full bg-primary-100 rounded-t"
                       style={{ height: `${height}%` }}

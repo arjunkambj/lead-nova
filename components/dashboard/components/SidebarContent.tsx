@@ -1,21 +1,19 @@
 "use client";
 
-import React, { useMemo, useCallback } from "react";
 import { Button } from "@heroui/button";
-import { Icon } from "@iconify/react";
 import { ScrollShadow } from "@heroui/scroll-shadow";
+import { Icon } from "@iconify/react";
 import { useAtom } from "jotai";
-
-import { sidebarOpenAtom } from "@/store/atoms";
+import React, { useCallback, useMemo } from "react";
 import {
   DASHBOARD_DIRECT_ITEMS,
   sectionItems,
 } from "@/constants/dashboard-sidebar";
-
-import SidebarMenu from "./SidebarMenu";
-import SidebarDirectItems from "./SidebarDirectItems";
-import { FooterItems } from "./FooterItems";
+import { sidebarOpenAtom } from "@/store/atoms";
 import Logo from "../../shared/Logo";
+import { FooterItems } from "./FooterItems";
+import SidebarDirectItems from "./SidebarDirectItems";
+import SidebarMenu from "./SidebarMenu";
 
 interface SidebarContentProps {
   onClose: () => void;
@@ -31,7 +29,7 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
           ? "w-[260px] p-5 opacity-100 overflow-visible"
           : "w-0 p-0 opacity-0 overflow-hidden"
       }`,
-    [isOpen]
+    [isOpen],
   );
 
   const scrollShadowClasses = useMemo(
@@ -39,7 +37,7 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
       `h-full max-h-full transition-all duration-300 ${
         isOpen ? "-mr-5 pr-5 opacity-100" : "opacity-0"
       }`,
-    [isOpen]
+    [isOpen],
   );
 
   const handleCloseClick = useCallback(() => {
@@ -63,12 +61,12 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
         </Button>
       </div>
     ),
-    [handleCloseClick]
+    [handleCloseClick],
   );
 
   const directItemsContent = useMemo(
     () => <SidebarDirectItems items={DASHBOARD_DIRECT_ITEMS} />,
-    []
+    [],
   );
 
   const sidebarMenuContent = useMemo(
@@ -86,7 +84,7 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
         }))}
       />
     ),
-    []
+    [],
   );
 
   const footerItemsContent = useMemo(() => <FooterItems />, []);

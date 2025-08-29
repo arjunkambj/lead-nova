@@ -2,16 +2,16 @@
  * Meta Graph API Client
  */
 
-import axios, { AxiosInstance } from "axios";
+import axios, { type AxiosInstance } from "axios";
 import { META_CONFIG } from "../../configs/meta";
 import type {
   MetaApiResponse,
-  MetaUser,
-  MetaPage,
+  MetaError,
   MetaLead,
   MetaLeadForm,
+  MetaPage,
   MetaTokenResponse,
-  MetaError,
+  MetaUser,
 } from "../../types/meta";
 
 export class MetaGraphAPI {
@@ -49,11 +49,11 @@ export class MetaGraphAPI {
             metaError.message,
             metaError.code,
             metaError.type,
-            metaError.fbtrace_id
+            metaError.fbtrace_id,
           );
         }
         throw error;
-      }
+      },
     );
   }
 
@@ -66,18 +66,25 @@ export class MetaGraphAPI {
    */
   async exchangeCodeForToken(
     code: string,
-    redirectUri: string
+    redirectUri: string,
   ): Promise<MetaTokenResponse> {
+    const clientId = process.env.NEXT_PUBLIC_META_APP_ID;
+    const clientSecret = process.env.META_APP_SECRET;
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Meta API credentials not configured");
+    }
+
     const params = new URLSearchParams({
-      client_id: process.env.NEXT_PUBLIC_META_APP_ID!,
-      client_secret: process.env.META_APP_SECRET!,
+      client_id: clientId,
+      client_secret: clientSecret,
       code,
       redirect_uri: redirectUri,
     });
 
     const response = await this.client.get<MetaTokenResponse>(
       `/${META_CONFIG.API_VERSION}/oauth/access_token`,
-      { params }
+      { params },
     );
 
     return response.data;
@@ -105,7 +112,7 @@ export class MetaGraphAPI {
         params: {
           fields: "id,name,access_token,category,picture,tasks",
         },
-      }
+      },
     );
     return response.data.data || [];
   }
@@ -116,63 +123,60 @@ export class MetaGraphAPI {
   async getBusinessPages(): Promise<MetaPage[]> {
     try {
       // First, get the user's businesses
-      const businessResponse = await this.client.get<MetaApiResponse<Array<{ id: string; name: string }>>>(
-        "/me/businesses",
-        {
-          params: {
-            fields: "id,name",
-          },
-        }
-      );
-      
+      const businessResponse = await this.client.get<
+        MetaApiResponse<Array<{ id: string; name: string }>>
+      >("/me/businesses", {
+        params: {
+          fields: "id,name",
+        },
+      });
+
       const businesses = businessResponse.data.data || [];
-      
+
       if (businesses.length === 0) {
         return [];
       }
-      
+
       const allPages: MetaPage[] = [];
-      
+
       // For each business, get owned pages and client pages
       for (const business of businesses) {
         try {
           // Try owned pages
-          const ownedPagesResponse = await this.client.get<MetaApiResponse<MetaPage[]>>(
-            `/${business.id}/owned_pages`,
-            {
-              params: {
-                fields: "id,name,access_token,category,picture,tasks",
-              },
-            }
-          );
+          const ownedPagesResponse = await this.client.get<
+            MetaApiResponse<MetaPage[]>
+          >(`/${business.id}/owned_pages`, {
+            params: {
+              fields: "id,name,access_token,category,picture,tasks",
+            },
+          });
           const ownedPages = ownedPagesResponse.data.data || [];
           allPages.push(...ownedPages);
         } catch {
           // Silently continue if owned pages cannot be fetched
         }
-        
+
         try {
           // Try client pages (pages the business has been granted access to)
-          const clientPagesResponse = await this.client.get<MetaApiResponse<MetaPage[]>>(
-            `/${business.id}/client_pages`,
-            {
-              params: {
-                fields: "id,name,access_token,category,picture,tasks",
-              },
-            }
-          );
+          const clientPagesResponse = await this.client.get<
+            MetaApiResponse<MetaPage[]>
+          >(`/${business.id}/client_pages`, {
+            params: {
+              fields: "id,name,access_token,category,picture,tasks",
+            },
+          });
           const clientPages = clientPagesResponse.data.data || [];
           allPages.push(...clientPages);
         } catch {
           // Silently continue if client pages cannot be fetched
         }
       }
-      
+
       // Remove duplicates based on page ID
       const uniquePages = Array.from(
-        new Map(allPages.map(page => [page.id, page])).values()
+        new Map(allPages.map((page) => [page.id, page])).values(),
       );
-      
+
       return uniquePages;
     } catch {
       return [];
@@ -186,26 +190,29 @@ export class MetaGraphAPI {
     // Fetch both in parallel
     const [directPages, businessPages] = await Promise.all([
       this.getUserPages().catch(() => []),
-      this.getBusinessPages().catch(() => [])
+      this.getBusinessPages().catch(() => []),
     ]);
-    
+
     // Combine and remove duplicates
     const allPages = [...directPages, ...businessPages];
     const uniquePages = Array.from(
-      new Map(allPages.map(page => [page.id, page])).values()
+      new Map(allPages.map((page) => [page.id, page])).values(),
     );
-    
+
     return uniquePages;
   }
 
   /**
    * Get user's permissions
    */
-  async getUserPermissions(): Promise<Array<{ permission: string; status: string }>> {
+  async getUserPermissions(): Promise<
+    Array<{ permission: string; status: string }>
+  > {
     try {
-      const response = await this.client.get<MetaApiResponse<Array<{ permission: string; status: string }>>>(
-        "/me/permissions"
-      );
+      const response =
+        await this.client.get<
+          MetaApiResponse<Array<{ permission: string; status: string }>>
+        >("/me/permissions");
       return response.data.data || [];
     } catch {
       return [];
@@ -222,24 +229,31 @@ export class MetaGraphAPI {
     category?: string;
     app_type?: number;
     supports_attribution?: boolean;
-    deployment_status?: 'DEVELOPMENT' | 'LIVE';
+    deployment_status?: "DEVELOPMENT" | "LIVE";
   }> {
     try {
-      const appId = process.env.NEXT_PUBLIC_META_APP_ID!;
-      const appToken = `${appId}|${process.env.META_APP_SECRET}`;
-      
+      const appId = process.env.NEXT_PUBLIC_META_APP_ID;
+      const appSecret = process.env.META_APP_SECRET;
+
+      if (!appId) {
+        throw new Error("NEXT_PUBLIC_META_APP_ID not configured");
+      }
+
+      const appToken = `${appId}|${appSecret}`;
+
       const response = await this.client.get(`/${appId}`, {
         params: {
           access_token: appToken,
-          fields: 'id,name,namespace,category,app_type,supports_attribution,deployment_status'
-        }
+          fields:
+            "id,name,namespace,category,app_type,supports_attribution,deployment_status",
+        },
       });
-      
+
       return response.data;
     } catch {
       return {
-        id: process.env.NEXT_PUBLIC_META_APP_ID!,
-        deployment_status: 'DEVELOPMENT' // Default to development if we can't check
+        id: process.env.NEXT_PUBLIC_META_APP_ID || "unknown",
+        deployment_status: "DEVELOPMENT", // Default to development if we can't check
       };
     }
   }
@@ -253,7 +267,7 @@ export class MetaGraphAPI {
     pages: MetaPage[];
     appInfo: {
       id: string;
-      deployment_status?: 'DEVELOPMENT' | 'LIVE';
+      deployment_status?: "DEVELOPMENT" | "LIVE";
     };
     tokenInfo?: {
       isValid: boolean;
@@ -266,10 +280,12 @@ export class MetaGraphAPI {
         this.getMe().catch(() => undefined),
         this.getUserPermissions(),
         this.getUserPages(),
-        this.getAppInfo()
+        this.getAppInfo(),
       ]);
 
-      let tokenInfo;
+      let tokenInfo:
+        | { isValid: boolean; expiresAt?: number; scopes?: string[] }
+        | undefined;
       if (this.accessToken) {
         tokenInfo = await this.debugToken(this.accessToken);
       }
@@ -279,16 +295,16 @@ export class MetaGraphAPI {
         permissions,
         pages,
         appInfo,
-        tokenInfo
+        tokenInfo,
       };
     } catch {
       return {
         permissions: [],
         pages: [],
         appInfo: {
-          id: process.env.NEXT_PUBLIC_META_APP_ID!,
-          deployment_status: 'DEVELOPMENT'
-        }
+          id: process.env.NEXT_PUBLIC_META_APP_ID || "unknown",
+          deployment_status: "DEVELOPMENT",
+        },
       };
     }
   }
@@ -316,7 +332,7 @@ export class MetaGraphAPI {
           fields:
             "id,name,status,questions,privacy_policy_url,created_time,leads_count",
         },
-      }
+      },
     );
     return response.data.data || [];
   }
@@ -327,22 +343,22 @@ export class MetaGraphAPI {
   async getFormLeads(
     formId: string,
     limit: number = META_CONFIG.LEAD_BATCH_SIZE,
-    cursor?: string
+    cursor?: string,
   ): Promise<{ leads: MetaLead[]; nextCursor?: string }> {
     const params: Record<string, string | number> = {
       fields:
         "id,created_time,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,form_id,form_name,is_organic,platform,field_data,custom_disclaimer_responses,retailer_item_id",
       limit,
     };
-    
+
     // Add cursor if provided for pagination
     if (cursor) {
       params.after = cursor;
     }
-    
+
     const response = await this.client.get<MetaApiResponse<MetaLead[]>>(
       `/${formId}/leads`,
-      { params }
+      { params },
     );
 
     return {
@@ -369,7 +385,7 @@ export class MetaGraphAPI {
    */
   async getPageHistoricalLeads(
     pageId: string,
-    since?: Date
+    since?: Date,
   ): Promise<MetaLead[]> {
     const sinceDate =
       since ||
@@ -408,7 +424,7 @@ export class MetaGraphAPI {
 
         const response = await this.client.get<MetaApiResponse<MetaLead[]>>(
           `/${form.id}/leads`,
-          { params }
+          { params },
         );
 
         const leads = response.data.data || [];
@@ -428,7 +444,7 @@ export class MetaGraphAPI {
   async subscribePageWebhook(
     pageId: string,
     callbackUrl: string,
-    pageAccessToken?: string
+    pageAccessToken?: string,
   ): Promise<boolean> {
     try {
       // Use page access token if provided, otherwise use the instance token
@@ -436,18 +452,18 @@ export class MetaGraphAPI {
       if (pageAccessToken) {
         this.accessToken = pageAccessToken;
       }
-      
+
       await this.client.post(`/${pageId}/subscribed_apps`, {
         subscribed_fields: META_CONFIG.WEBHOOK_FIELDS,
         callback_url: callbackUrl,
         verify_token: META_CONFIG.WEBHOOK_VERIFY_TOKEN,
       });
-      
+
       // Restore original token
       if (pageAccessToken) {
         this.accessToken = originalToken;
       }
-      
+
       return true;
     } catch (error) {
       console.error("Failed to subscribe to webhook:", error);
@@ -504,7 +520,7 @@ export class MetaAPIError extends Error {
     message: string,
     public code: number,
     public type: string,
-    public traceId?: string
+    public traceId?: string,
   ) {
     super(message);
     this.name = "MetaAPIError";

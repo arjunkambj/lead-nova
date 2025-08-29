@@ -1,14 +1,8 @@
 "use client";
 
-import { memo } from "react";
-import { 
-  Card, 
-  CardBody, 
-  CardHeader, 
-  Divider, 
-  Chip
-} from "@heroui/react";
+import { Card, CardBody, CardHeader, Chip, Divider } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { memo } from "react";
 
 interface LeadStatisticsCardProps {
   stats: {
@@ -37,19 +31,27 @@ const LeadStatisticsCard = memo(({ stats }: LeadStatisticsCardProps) => {
       <CardBody className="gap-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-primary">{stats.totalLeads}</p>
+            <p className="text-2xl font-bold text-primary">
+              {stats.totalLeads}
+            </p>
             <p className="text-xs text-default-500">Total Leads</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-success">{stats.leadsToday}</p>
+            <p className="text-2xl font-bold text-success">
+              {stats.leadsToday}
+            </p>
             <p className="text-xs text-default-500">Today</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-warning">{stats.leadsByStatus.new}</p>
+            <p className="text-2xl font-bold text-warning">
+              {stats.leadsByStatus.new}
+            </p>
             <p className="text-xs text-default-500">New</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-secondary">{stats.connectedPages}</p>
+            <p className="text-2xl font-bold text-secondary">
+              {stats.connectedPages}
+            </p>
             <p className="text-xs text-default-500">Meta Pages</p>
           </div>
         </div>

@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { Button, Card, CardBody, Chip, Tab, Tabs } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { useMemo, useState } from "react";
 import {
-  plans,
-  enterprisePlan,
-  priceFor,
   type BillingCycle,
+  enterprisePlan,
   type Plan,
+  plans,
+  priceFor,
 } from "./components/pricing";
 
 function PlanPrice({
@@ -132,9 +132,7 @@ export default function Pricing() {
         <h2 className="text-3xl md:text-4xl font-bold text-default-900">
           Simple Pricing
         </h2>
-        <p className="mt-3 text-default-600">
-          Start free. Scale as you grow.
-        </p>
+        <p className="mt-3 text-default-600">Start free. Scale as you grow.</p>
       </div>
 
       <div className="mt-6 flex justify-center">

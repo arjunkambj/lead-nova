@@ -1,8 +1,8 @@
 "use node";
 
-import crypto from "crypto";
-import { internalAction } from "../_generated/server";
+import crypto from "node:crypto";
 import { v } from "convex/values";
+import { internalAction } from "../_generated/server";
 
 /**
  * Verify webhook signature from Meta
@@ -10,7 +10,7 @@ import { v } from "convex/values";
 export function verifyWebhookSignature(
   payload: string,
   signature: string,
-  appSecret?: string
+  appSecret?: string,
 ): boolean {
   try {
     const secret = appSecret || process.env.META_APP_SECRET || "";
@@ -18,7 +18,7 @@ export function verifyWebhookSignature(
       .createHmac("sha256", secret)
       .update(payload)
       .digest("hex");
-    
+
     return `sha256=${expectedSignature}` === signature;
   } catch (error) {
     console.error("Signature verification error:", error);
@@ -36,7 +36,7 @@ export const verifyWebhookSignatureAction = internalAction({
     signature: v.string(),
   },
   returns: v.boolean(),
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     return verifyWebhookSignature(args.payload, args.signature);
   },
 });

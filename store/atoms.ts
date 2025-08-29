@@ -1,6 +1,6 @@
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import { today, getLocalTimeZone } from "@internationalized/date";
 
 // Analytics date range interface
 export interface AnalyticsDateRange {
@@ -23,7 +23,7 @@ function getDefaultDateRange(): AnalyticsDateRange {
 
 // Global analytics date range atom
 export const analyticsDateRangeAtom = atom<AnalyticsDateRange>(
-  getDefaultDateRange()
+  getDefaultDateRange(),
 );
 
 // UI State atoms
@@ -81,7 +81,7 @@ export const notificationPreferencesAtom = atomWithStorage(
     showSyncNotifications: true,
     showErrorNotifications: true,
     showSuccessNotifications: true,
-  }
+  },
 );
 
 // Performance monitoring atom (for dev)

@@ -64,9 +64,10 @@ export default function TermsPage() {
             5. Meta Platform Compliance
           </h2>
           <p className="text-default-700 mb-4">
-            Your use of LeadNova with Meta platforms must comply with Meta&apos;s
-            Platform Terms and Developer Policies. You are responsible for
-            maintaining compliance with Meta&apos;s requirements.
+            Your use of LeadNova with Meta platforms must comply with
+            Meta&apos;s Platform Terms and Developer Policies. You are
+            responsible for maintaining compliance with Meta&apos;s
+            requirements.
           </p>
         </section>
 
@@ -121,10 +122,10 @@ export default function TermsPage() {
             10. Disclaimer of Warranties
           </h2>
           <p className="text-default-700 mb-4">
-            The service is provided &quot;as is&quot; and &quot;as available&quot; without
-            warranties of any kind, either express or implied, including but not
-            limited to implied warranties of merchantability and fitness for a
-            particular purpose.
+            The service is provided &quot;as is&quot; and &quot;as
+            available&quot; without warranties of any kind, either express or
+            implied, including but not limited to implied warranties of
+            merchantability and fitness for a particular purpose.
           </p>
         </section>
 

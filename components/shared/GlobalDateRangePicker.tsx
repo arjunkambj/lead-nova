@@ -1,29 +1,29 @@
 "use client";
 
-import React, { useMemo, useState, useCallback, memo } from "react";
 import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
   Button,
+  cn,
+  type DateValue,
+  Divider,
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  RangeCalendar,
+  type RangeValue,
   Select,
   SelectItem,
-  cn,
-  RangeCalendar,
-  Input,
-  Divider,
-  type DateValue,
-  type RangeValue,
   type Selection,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import {
+  type CalendarDate,
+  getLocalTimeZone,
   parseDate,
   today,
-  getLocalTimeZone,
-  CalendarDate,
 } from "@internationalized/date";
 import { useAtom } from "jotai";
+import { memo, useCallback, useMemo, useState } from "react";
 
 import { analyticsDateRangeAtom } from "@/store/atoms";
 
@@ -111,7 +111,7 @@ const calendarDateToString = (date: CalendarDate): string => {
 // Convert DateRange to AnalyticsDateRange
 const toAnalyticsDateRange = (
   range: CalendarDateRange,
-  preset?: string | null
+  preset?: string | null,
 ): AnalyticsDateRange => ({
   start: calendarDateToString(range.start),
   end: calendarDateToString(range.end),
@@ -168,7 +168,7 @@ const getDateRangeFromPreset = (preset: string): CalendarDateRange => {
         const lastDay = new Date(year, lastMonth.getMonth() + 1, 0).getDate();
         const startOfLastMonth = parseDate(`${year}-${month}-01`);
         const endOfLastMonth = parseDate(
-          `${year}-${month}-${String(lastDay).padStart(2, "0")}`
+          `${year}-${month}-${String(lastDay).padStart(2, "0")}`,
         );
         return {
           start: startOfLastMonth,
@@ -222,108 +222,110 @@ const getDateRangeFromPreset = (preset: string): CalendarDateRange => {
 };
 
 // Memoized preset button component
-const PresetButton = memo(({ 
-  preset, 
-  isSelected, 
-  onSelect 
-}: { 
-  preset: typeof DATE_RANGE_PRESETS[keyof typeof DATE_RANGE_PRESETS];
-  isSelected: boolean;
-  onSelect: (key: string) => void;
-}) => (
-  <Button
-    key={preset.key}
-    className={cn(
-      "w-full justify-start text-xs h-8 rounded-md",
-      isSelected
-        ? "bg-primary/10 text-primary"
-        : "hover:bg-default-100"
-    )}
-    size="sm"
-    variant="light"
-    onPress={() => onSelect(preset.key)}
-  >
-    {preset.label}
-  </Button>
-));
+const PresetButton = memo(
+  ({
+    preset,
+    isSelected,
+    onSelect,
+  }: {
+    preset: (typeof DATE_RANGE_PRESETS)[keyof typeof DATE_RANGE_PRESETS];
+    isSelected: boolean;
+    onSelect: (key: string) => void;
+  }) => (
+    <Button
+      key={preset.key}
+      className={cn(
+        "w-full justify-start text-xs h-8 rounded-md",
+        isSelected ? "bg-primary/10 text-primary" : "hover:bg-default-100",
+      )}
+      size="sm"
+      variant="light"
+      onPress={() => onSelect(preset.key)}
+    >
+      {preset.label}
+    </Button>
+  ),
+);
 
 PresetButton.displayName = "PresetButton";
 
 // Memoized calendar content component
-const CalendarContent = memo(({
-  value,
-  onChange,
-  onClose,
-  onApply,
-}: {
-  value?: RangeValue<DateValue>;
-  onChange: (range: RangeValue<DateValue>) => void;
-  onClose: () => void;
-  onApply: () => void;
-}) => (
-  <div className="p-4 bg-content1 rounded-r-xl">
-    <div className="mb-3">
-      <div className="flex gap-3 w-full items-center text-xs">
-        <Input
-          readOnly
-          aria-label="Start date"
-          className="max-w-[160px]"
-          size="sm"
-          startContent={
-            <Icon
-              aria-hidden
-              className="mr-1"
-              icon="solar:calendar-bold"
-              width={16}
-            />
-          }
-          value={formatSingleDate(value?.start as CalendarDate | undefined)}
-        />
-        <Icon
-          aria-hidden
-          className="text-default-800"
-          icon="solar:arrow-right-bold"
-          width={18}
-        />
-        <Input
-          readOnly
-          aria-label="End date"
-          className="max-w-[160px]"
-          size="sm"
-          startContent={
-            <Icon aria-hidden icon="solar:calendar-linear" width={16} />
-          }
-          value={formatSingleDate(value?.end as CalendarDate | undefined)}
-        />
+const CalendarContent = memo(
+  ({
+    value,
+    onChange,
+    onClose,
+    onApply,
+  }: {
+    value?: RangeValue<DateValue>;
+    onChange: (range: RangeValue<DateValue>) => void;
+    onClose: () => void;
+    onApply: () => void;
+  }) => (
+    <div className="p-4 bg-content1 rounded-r-xl">
+      <div className="mb-3">
+        <div className="flex gap-3 w-full items-center text-xs">
+          <Input
+            readOnly
+            aria-label="Start date"
+            className="max-w-[160px]"
+            size="sm"
+            startContent={
+              <Icon
+                aria-hidden
+                className="mr-1"
+                icon="solar:calendar-bold"
+                width={16}
+              />
+            }
+            value={formatSingleDate(value?.start as CalendarDate | undefined)}
+          />
+          <Icon
+            aria-hidden
+            className="text-default-800"
+            icon="solar:arrow-right-bold"
+            width={18}
+          />
+          <Input
+            readOnly
+            aria-label="End date"
+            className="max-w-[160px]"
+            size="sm"
+            startContent={
+              <Icon aria-hidden icon="solar:calendar-linear" width={16} />
+            }
+            value={formatSingleDate(value?.end as CalendarDate | undefined)}
+          />
+        </div>
+      </div>
+
+      <RangeCalendar
+        aria-label="Select custom date range"
+        className="rounded-lg mt-2 overflow-hidden border shadow-none border-divider"
+        classNames={{
+          base: "bg-content1",
+          headerWrapper: "pt-2",
+          gridWrapper: "bg-content1",
+        }}
+        pageBehavior="visible"
+        value={value}
+        visibleMonths={2}
+        onChange={onChange}
+      />
+
+      <Divider className="bg-divider mt-4" />
+
+      <div className="flex justify-end gap-2 mt-4 pt-3">
+        <Button variant="light" onPress={onClose}>
+          Cancel
+        </Button>
+        <Button color="primary" onPress={onApply}>
+          Done
+        </Button>
       </div>
     </div>
-
-    <RangeCalendar
-      aria-label="Select custom date range"
-      className="rounded-lg mt-2 overflow-hidden border shadow-none border-divider"
-      classNames={{
-        base: "bg-content1",
-        headerWrapper: "pt-2",
-        gridWrapper: "bg-content1",
-      }}
-      pageBehavior="visible"
-      value={value}
-      visibleMonths={2}
-      onChange={onChange}
-    />
-
-    <Divider className="bg-divider mt-4" />
-
-    <div className="flex justify-end gap-2 mt-4 pt-3">
-      <Button variant="light" onPress={onClose}>
-        Cancel
-      </Button>
-      <Button color="primary" onPress={onApply}>
-        Done
-      </Button>
-    </div>
-  </div>
-));
+  ),
+);
 
 CalendarContent.displayName = "CalendarContent";
 
@@ -349,7 +351,7 @@ const GlobalDateRangePicker = memo(function GlobalDateRangePicker({
 
   const [selectedPreset, setSelectedPreset] = useState<string | null>(
     externalSelectedPreset ||
-      (useGlobalState ? globalDateRange?.preset || null : null)
+      (useGlobalState ? globalDateRange?.preset || null : null),
   );
 
   // Convert global date range to CalendarDateRange - memoized
@@ -426,13 +428,13 @@ const GlobalDateRangePicker = memo(function GlobalDateRangePicker({
       onAnalyticsChange,
       useGlobalState,
       setGlobalDateRange,
-    ]
+    ],
   );
 
   // Handle custom range selection - optimized
   const handleCustomRangeChange = useCallback(
     (range: CalendarDateRange | null) => {
-      if (range && range.start && range.end) {
+      if (range?.start && range.end) {
         const dateRange = {
           start: range.start as CalendarDate,
           end: range.end as CalendarDate,
@@ -457,7 +459,7 @@ const GlobalDateRangePicker = memo(function GlobalDateRangePicker({
       onAnalyticsChange,
       useGlobalState,
       setGlobalDateRange,
-    ]
+    ],
   );
 
   // Handle apply button click - optimized
@@ -513,7 +515,7 @@ const GlobalDateRangePicker = memo(function GlobalDateRangePicker({
       onAnalyticsChange,
       useGlobalState,
       setGlobalDateRange,
-    ]
+    ],
   );
 
   // Filter available presets - memoized
@@ -521,12 +523,12 @@ const GlobalDateRangePicker = memo(function GlobalDateRangePicker({
     () =>
       presets
         .filter(
-          (key) => DATE_RANGE_PRESETS[key as keyof typeof DATE_RANGE_PRESETS]
+          (key) => DATE_RANGE_PRESETS[key as keyof typeof DATE_RANGE_PRESETS],
         )
         .map(
-          (key) => DATE_RANGE_PRESETS[key as keyof typeof DATE_RANGE_PRESETS]
+          (key) => DATE_RANGE_PRESETS[key as keyof typeof DATE_RANGE_PRESETS],
         ),
-    [presets]
+    [presets],
   );
 
   // Render select mode
@@ -560,15 +562,13 @@ const GlobalDateRangePicker = memo(function GlobalDateRangePicker({
           aria-label="Select date range"
           className={cn(
             "min-w-[220px] justify-between rounded-xl bg-content1 border border-divider",
-            className
+            className,
           )}
           endContent={<Icon icon="solar:calendar-bold" width={20} />}
           size={size}
           variant="light"
         >
-          <span className="text-left flex-1 truncate">
-            {getSelectionLabel}
-          </span>
+          <span className="text-left flex-1 truncate">{getSelectionLabel}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-0 w-auto bg-transparent">
@@ -589,8 +589,14 @@ const GlobalDateRangePicker = memo(function GlobalDateRangePicker({
 
           {/* Custom range calendar */}
           <CalendarContent
-            value={value ? (value as unknown as RangeValue<DateValue>) : undefined}
-            onChange={handleCustomRangeChange as unknown as (range: RangeValue<DateValue>) => void}
+            value={
+              value ? (value as unknown as RangeValue<DateValue>) : undefined
+            }
+            onChange={
+              handleCustomRangeChange as unknown as (
+                range: RangeValue<DateValue>,
+              ) => void
+            }
             onClose={() => setIsOpen(false)}
             onApply={handleApply}
           />

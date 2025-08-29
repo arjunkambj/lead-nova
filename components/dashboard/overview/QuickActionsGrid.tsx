@@ -1,8 +1,8 @@
 "use client";
 
-import { memo } from "react";
 import { Card, CardBody } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { memo } from "react";
 
 const QuickActionsGrid = memo(() => {
   return (
@@ -10,7 +10,11 @@ const QuickActionsGrid = memo(() => {
       <Card className="hover:shadow-lg transition-shadow cursor-pointer">
         <CardBody className="flex flex-row items-center gap-4">
           <div className="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
-            <Icon icon="solar:users-group-rounded-bold" width={24} className="text-primary" />
+            <Icon
+              icon="solar:users-group-rounded-bold"
+              width={24}
+              className="text-primary"
+            />
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium">Manage Team</p>
@@ -22,7 +26,11 @@ const QuickActionsGrid = memo(() => {
       <Card className="hover:shadow-lg transition-shadow cursor-pointer">
         <CardBody className="flex flex-row items-center gap-4">
           <div className="p-3 bg-secondary-100 dark:bg-secondary-900/20 rounded-lg">
-            <Icon icon="solar:settings-bold" width={24} className="text-secondary" />
+            <Icon
+              icon="solar:settings-bold"
+              width={24}
+              className="text-secondary"
+            />
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium">Settings</p>
@@ -34,7 +42,11 @@ const QuickActionsGrid = memo(() => {
       <Card className="hover:shadow-lg transition-shadow cursor-pointer">
         <CardBody className="flex flex-row items-center gap-4">
           <div className="p-3 bg-success-100 dark:bg-success-900/20 rounded-lg">
-            <Icon icon="solar:chart-square-bold" width={24} className="text-success" />
+            <Icon
+              icon="solar:chart-square-bold"
+              width={24}
+              className="text-success"
+            />
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium">Analytics</p>

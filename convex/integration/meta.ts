@@ -1,15 +1,15 @@
-import { v } from "convex/values";
-import {
-  query,
-  mutation,
-  action,
-  internalQuery,
-  internalMutation,
-  internalAction,
-} from "../_generated/server";
-import { internal } from "../_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { Doc, Id } from "../_generated/dataModel";
+import { v } from "convex/values";
+import { internal } from "../_generated/api";
+import type { Doc, Id } from "../_generated/dataModel";
+import {
+  action,
+  internalAction,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "../_generated/server";
 
 // Work Pool will be configured later when properly set up
 // For now, we'll use direct action calls
@@ -28,19 +28,20 @@ export const getConnectionStatus = query({
       lastSyncedAt: v.optional(v.number()),
       syncStatus: v.optional(v.string()),
       leadCount: v.optional(v.number()),
-    })
+    }),
   ),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user || !user.organizationId) return null;
+    const organizationId = user.organizationId;
 
     const integration = await ctx.db
       .query("metaIntegrations")
       .withIndex("byOrganizationAndActive", (q) =>
-        q.eq("organizationId", user.organizationId!).eq("isActive", true)
+        q.eq("organizationId", organizationId).eq("isActive", true),
       )
       .first();
 
@@ -54,7 +55,7 @@ export const getConnectionStatus = query({
     const leads = await ctx.db
       .query("leads")
       .withIndex("byOrganization", (q) =>
-        q.eq("organizationId", user.organizationId!)
+        q.eq("organizationId", organizationId),
       )
       .collect();
     const leadCount = leads.length;
@@ -79,8 +80,8 @@ export const getLeads = query({
         v.literal("contacted"),
         v.literal("qualified"),
         v.literal("converted"),
-        v.literal("lost")
-      )
+        v.literal("lost"),
+      ),
     ),
     limit: v.optional(v.number()),
   },
@@ -95,26 +96,28 @@ export const getLeads = query({
       status: v.string(),
       createdTime: v.number(),
       platform: v.optional(v.string()),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user || !user.organizationId) return [];
+    const organizationId = user.organizationId;
 
     // Use the appropriate index based on whether status filter is provided
-    const query = args.status
+    const status = args.status;
+    const query = status
       ? ctx.db
           .query("leads")
           .withIndex("byOrganizationAndStatus", (q) =>
-            q.eq("organizationId", user.organizationId!).eq("status", args.status!)
+            q.eq("organizationId", organizationId).eq("status", status),
           )
       : ctx.db
           .query("leads")
           .withIndex("byOrganization", (q) =>
-            q.eq("organizationId", user.organizationId!)
+            q.eq("organizationId", organizationId),
           );
 
     const allLeads = await query.collect();
@@ -123,7 +126,9 @@ export const getLeads = query({
     const sortedLeads = allLeads.sort((a, b) => b.createdTime - a.createdTime);
 
     // Apply limit if provided
-    const limitedLeads = args.limit ? sortedLeads.slice(0, args.limit) : sortedLeads;
+    const limitedLeads = args.limit
+      ? sortedLeads.slice(0, args.limit)
+      : sortedLeads;
 
     return limitedLeads.map((lead) => ({
       _id: lead._id,
@@ -155,11 +160,14 @@ export const getPageForms = action({
         created_time: v.optional(v.string()),
         leads_count: v.optional(v.number()),
         questions: v.optional(v.any()),
-      })
+      }),
     ),
     error: v.optional(v.string()),
   }),
-  handler: async (ctx, args): Promise<{
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
     success: boolean;
     forms: Array<{
       id: string;
@@ -167,8 +175,12 @@ export const getPageForms = action({
       status: string;
       created_time?: string;
       leads_count?: number;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      questions?: any;
+      questions?: Array<{
+        key: string;
+        label: string;
+        type: string;
+        values?: string[];
+      }>;
     }>;
     error?: string;
   }> => {
@@ -182,18 +194,19 @@ export const getPageForms = action({
           status: string;
           created_time?: string;
           leads_count?: number;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      questions?: any;
+          questions?: Array<{
+            key: string;
+            label: string;
+            type: string;
+            values?: string[];
+          }>;
         }>;
         error?: string;
-      } = await ctx.runAction(
-        internal.integration.meta.fetchPageForms,
-        {
-          pageId: args.pageId,
-          pageAccessToken: args.pageAccessToken,
-        }
-      );
-      
+      } = await ctx.runAction(internal.integration.meta.fetchPageForms, {
+        pageId: args.pageId,
+        pageAccessToken: args.pageAccessToken,
+      });
+
       return result;
     } catch (error) {
       console.error("Failed to fetch forms:", error);
@@ -226,8 +239,9 @@ export const connectMetaAccount = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user || !user.organizationId) throw new Error("No organization found");
+    const organizationId = user.organizationId;
 
     const now = Date.now();
 
@@ -255,9 +269,9 @@ export const connectMetaAccount = mutation({
     } else {
       // Create new integration
       const webhookVerifyToken = generateWebhookToken();
-      
+
       integrationId = await ctx.db.insert("metaIntegrations", {
-        organizationId: user.organizationId,
+        organizationId: organizationId,
         pageId: args.pageId,
         pageName: args.pageName,
         pageAccessToken: args.pageAccessToken,
@@ -271,29 +285,37 @@ export const connectMetaAccount = mutation({
         updatedAt: now,
       });
     }
-    
+
     // Only trigger sync if requested (default true for backward compatibility)
     const shouldTriggerSync = args.triggerSync !== false;
-    
+
     if (shouldTriggerSync) {
       // Schedule historical sync
-      await ctx.scheduler.runAfter(0, internal.integration.meta.startHistoricalSync, {
-        integrationId,
-      });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.integration.meta.startHistoricalSync,
+        {
+          integrationId,
+        },
+      );
     }
-    
+
     // Always schedule webhook subscription
-    await ctx.scheduler.runAfter(1000, internal.integration.meta.subscribeToWebhooks, {
-      integrationId,
-      pageId: args.pageId,
-      pageAccessToken: args.pageAccessToken,
-    });
+    await ctx.scheduler.runAfter(
+      1000,
+      internal.integration.meta.subscribeToWebhooks,
+      {
+        integrationId,
+        pageId: args.pageId,
+        pageAccessToken: args.pageAccessToken,
+      },
+    );
 
     // Update onboarding status to reflect Meta connection
     const onboarding = await ctx.db
       .query("onboarding")
       .withIndex("byUserOrganization", (q) =>
-        q.eq("userId", userId).eq("organizationId", user.organizationId!)
+        q.eq("userId", userId).eq("organizationId", organizationId),
       )
       .first();
 
@@ -327,15 +349,16 @@ export const disconnectMetaAccount = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user || !user.organizationId) throw new Error("No organization found");
+    const organizationId = user.organizationId;
 
     const now = Date.now();
 
     const integration = await ctx.db
       .query("metaIntegrations")
       .withIndex("byOrganizationAndActive", (q) =>
-        q.eq("organizationId", user.organizationId!).eq("isActive", true)
+        q.eq("organizationId", organizationId).eq("isActive", true),
       )
       .first();
 
@@ -350,7 +373,7 @@ export const disconnectMetaAccount = mutation({
     const onboarding = await ctx.db
       .query("onboarding")
       .withIndex("byUserOrganization", (q) =>
-        q.eq("userId", userId).eq("organizationId", user.organizationId!)
+        q.eq("userId", userId).eq("organizationId", organizationId),
       )
       .first();
 
@@ -373,7 +396,7 @@ export const updateLeadStatus = mutation({
       v.literal("contacted"),
       v.literal("qualified"),
       v.literal("converted"),
-      v.literal("lost")
+      v.literal("lost"),
     ),
     notes: v.optional(v.string()),
   },
@@ -387,7 +410,7 @@ export const updateLeadStatus = mutation({
     const lead = await ctx.db.get(args.leadId);
     if (!lead) throw new Error("Lead not found");
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user || user.organizationId !== lead.organizationId) {
       throw new Error("Unauthorized");
     }
@@ -416,11 +439,11 @@ export const getIntegrationById = internalQuery({
       pageAccessToken: v.string(),
       leadFormIds: v.optional(v.array(v.string())),
       isActive: v.boolean(),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const integration = await ctx.db.get(args.integrationId);
-    
+
     if (!integration || !integration.isActive) return null;
 
     return {
@@ -443,7 +466,7 @@ export const getIntegrationByPageId = internalQuery({
       organizationId: v.id("organizations"),
       pageAccessToken: v.string(),
       isActive: v.boolean(),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const integration = await ctx.db
@@ -482,7 +505,7 @@ export const storeLead = internalMutation({
         v.object({
           name: v.string(),
           value: v.string(),
-        })
+        }),
       ),
       createdTime: v.number(),
       platform: v.optional(v.string()),
@@ -544,7 +567,7 @@ export const updateSyncStatus = internalMutation({
       v.literal("idle"),
       v.literal("syncing"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
     lastSyncedAt: v.optional(v.number()),
   },
@@ -566,13 +589,13 @@ export const createSyncJob = internalMutation({
     jobType: v.union(
       v.literal("historical"),
       v.literal("webhook"),
-      v.literal("manual")
+      v.literal("manual"),
     ),
   },
   returns: v.id("leadSyncJobs"),
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     const jobId = await ctx.db.insert("leadSyncJobs", {
       organizationId: args.organizationId,
       pageId: args.pageId,
@@ -597,7 +620,7 @@ export const startHistoricalSync = internalAction({
     // Get integration details
     const integration = await ctx.runQuery(
       internal.integration.meta.getIntegrationById,
-      { integrationId: args.integrationId }
+      { integrationId: args.integrationId },
     );
 
     if (!integration) {
@@ -611,12 +634,15 @@ export const startHistoricalSync = internalAction({
     });
 
     // Create sync job
-    const jobId = await ctx.runMutation(internal.integration.meta.createSyncJob, {
-      organizationId: integration.organizationId,
-      pageId: integration.pageId,
-      jobType: "historical",
-    });
-    
+    const jobId = await ctx.runMutation(
+      internal.integration.meta.createSyncJob,
+      {
+        organizationId: integration.organizationId,
+        pageId: integration.pageId,
+        jobType: "historical",
+      },
+    );
+
     // Schedule the sync action directly (Work Pool to be configured later)
     await ctx.scheduler.runAfter(
       0,
@@ -626,7 +652,7 @@ export const startHistoricalSync = internalAction({
         jobId,
         pageId: integration.pageId,
         accessToken: integration.pageAccessToken,
-      }
+      },
     );
 
     return null;
@@ -643,7 +669,6 @@ export const syncHistoricalLeads = internalAction({
   returns: v.null(),
   handler: async (ctx, args) => {
     try {
-
       // Update job status to processing
       await ctx.runMutation(internal.integration.meta.updateSyncJobStatus, {
         jobId: args.jobId,
@@ -651,11 +676,14 @@ export const syncHistoricalLeads = internalAction({
       });
 
       // Call the Work Pool action for actual sync
-      const result = await ctx.runAction(internal.workpool.leadSync.syncHistoricalLeads, {
-        integrationId: args.integrationId,
-        pageId: args.pageId,
-        accessToken: args.accessToken,
-      });
+      const result = await ctx.runAction(
+        internal.workpool.leadSync.syncHistoricalLeads,
+        {
+          integrationId: args.integrationId,
+          pageId: args.pageId,
+          accessToken: args.accessToken,
+        },
+      );
 
       // Update job status based on result
       await ctx.runMutation(internal.integration.meta.updateSyncJobStatus, {
@@ -676,7 +704,6 @@ export const syncHistoricalLeads = internalAction({
       if (!result.success) {
         throw new Error(result.error || "Historical sync failed");
       }
-
     } catch (_error) {
       // Update job status to failed
       await ctx.runMutation(internal.integration.meta.updateSyncJobStatus, {
@@ -705,30 +732,31 @@ export const subscribeToWebhooks = internalAction({
     pageAccessToken: v.string(),
   },
   returns: v.null(),
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     try {
       // Get webhook URL from Convex
-      const convexUrl = process.env.CONVEX_SITE_URL || process.env.NEXT_PUBLIC_CONVEX_URL;
+      const convexUrl =
+        process.env.CONVEX_SITE_URL || process.env.NEXT_PUBLIC_CONVEX_URL;
       if (!convexUrl) {
         return null;
       }
-      
-      const webhookUrl = `${convexUrl.replace('.convex.cloud', '.convex.site')}/webhook/meta`;
-      
+
+      const webhookUrl = `${convexUrl.replace(".convex.cloud", ".convex.site")}/webhook/meta`;
+
       // Initialize Meta API with page access token
       const { getMetaAPI } = await import("../../lib/meta/api");
       const metaAPI = getMetaAPI(args.pageAccessToken);
-      
+
       // Subscribe to webhooks
       await metaAPI.subscribePageWebhook(
         args.pageId,
         webhookUrl,
-        args.pageAccessToken
+        args.pageAccessToken,
       );
     } catch {
       // Silently fail webhook subscription
     }
-    
+
     return null;
   },
 });
@@ -776,9 +804,11 @@ interface ParsedLeadFields {
   selectedDealer?: string;
 }
 
-function parseLeadFields(fieldData: Array<{ name: string; value: string }>): ParsedLeadFields {
+function parseLeadFields(
+  fieldData: Array<{ name: string; value: string }>,
+): ParsedLeadFields {
   const fields: ParsedLeadFields = {};
-  
+
   for (const field of fieldData) {
     switch (field.name.toLowerCase()) {
       case "email":
@@ -883,7 +913,7 @@ function parseLeadFields(fieldData: Array<{ name: string; value: string }>): Par
         break;
     }
   }
-  
+
   return fields;
 }
 
@@ -896,7 +926,7 @@ export const updateSyncJobStatus = internalMutation({
       v.literal("pending"),
       v.literal("processing"),
       v.literal("completed"),
-      v.literal("failed")
+      v.literal("failed"),
     ),
     totalLeads: v.optional(v.number()),
     processedLeads: v.optional(v.number()),
@@ -939,7 +969,7 @@ export const getExpiringIntegrations = internalQuery({
       pageAccessToken: v.string(),
       userAccessToken: v.optional(v.string()),
       tokenExpiresAt: v.number(),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     // Query active integrations and check expiration in-memory
@@ -1001,21 +1031,21 @@ export const fetchPageForms = internalAction({
         created_time: v.optional(v.string()),
         leads_count: v.optional(v.number()),
         questions: v.optional(v.any()),
-      })
+      }),
     ),
     error: v.optional(v.string()),
   }),
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     try {
       // Import Meta API
       const { getMetaAPI } = await import("../../lib/meta/api");
       const metaAPI = getMetaAPI(args.pageAccessToken);
-      
+
       // Fetch forms from Meta
       const forms = await metaAPI.getPageLeadForms(args.pageId);
-      
+
       // Transform the response to match our schema
-      const transformedForms = forms.map(form => ({
+      const transformedForms = forms.map((form) => ({
         id: form.id,
         name: form.name,
         status: form.status,
@@ -1023,7 +1053,7 @@ export const fetchPageForms = internalAction({
         leads_count: form.leads_count,
         questions: form.questions,
       }));
-      
+
       return {
         success: true,
         forms: transformedForms,
@@ -1053,7 +1083,7 @@ export const triggerSyncWithForms = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user || !user.organizationId) throw new Error("No organization found");
 
     // Verify the integration belongs to the user's organization
@@ -1069,9 +1099,13 @@ export const triggerSyncWithForms = mutation({
     });
 
     // Trigger historical sync
-    await ctx.scheduler.runAfter(0, internal.integration.meta.startHistoricalSync, {
-      integrationId: args.integrationId,
-    });
+    await ctx.scheduler.runAfter(
+      0,
+      internal.integration.meta.startHistoricalSync,
+      {
+        integrationId: args.integrationId,
+      },
+    );
 
     return {
       success: true,

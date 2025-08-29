@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { useMemo } from "react";
+import { api } from "@/convex/_generated/api";
 
 /**
  * Optimized hook that fetches all dashboard data in a single batched query

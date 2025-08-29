@@ -20,7 +20,7 @@ export default convexAuthNextjsMiddleware(
       return nextjsMiddlewareRedirect(request, "/signin");
     }
   },
-  { cookieConfig: { maxAge: 60 * 60 * 24 * 30 } }
+  { cookieConfig: { maxAge: 60 * 60 * 24 * 30 } },
 );
 
 export const config = {
@@ -29,6 +29,6 @@ export const config = {
   matcher: [
     "/((?!.*\\..*|_next|api/meta/auth|api/meta/callback).*)",
     "/",
-    "/(trpc)(.*)"
+    "/(trpc)(.*)",
   ],
 };

@@ -1,11 +1,11 @@
 "use client";
 
+import { addToast } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { addToast } from "@heroui/react";
-import { useCurrentUser, useResetEverything } from "./useUser";
-import { useOrganization } from "./useOrganization";
 import { useResetOnboarding } from "./useOnboarding";
+import { useOrganization } from "./useOrganization";
+import { useCurrentUser, useResetEverything } from "./useUser";
 
 export function useOverview() {
   const router = useRouter();
@@ -20,27 +20,27 @@ export function useOverview() {
 
   const handleResetOnboarding = async () => {
     setIsResetting(true);
-    
+
     try {
       const result = await resetOnboarding();
-      
+
       if (result.success) {
         addToast({
           title: "Onboarding Reset",
           description: "Redirecting to onboarding setup...",
           color: "success",
         });
-        
+
         // Small delay to show toast
         setTimeout(() => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push("/onboarding/create-organization" as any);
+          router.push("/onboarding/create-organization");
         }, 500);
       }
     } catch (error) {
       addToast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to reset onboarding",
+        description:
+          error instanceof Error ? error.message : "Failed to reset onboarding",
         color: "danger",
       });
       setIsResetting(false);
@@ -59,27 +59,27 @@ export function useOverview() {
 
     setIsResettingEverything(true);
     setShowResetModal(false);
-    
+
     try {
       const result = await resetEverything();
-      
+
       if (result.success) {
         addToast({
           title: "Reset Complete",
           description: result.message,
           color: "success",
         });
-        
+
         // Small delay to show toast
         setTimeout(() => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          router.push("/onboarding/create-organization" as any);
+          router.push("/onboarding/create-organization");
         }, 1000);
       }
     } catch (error) {
       addToast({
         title: "Reset Failed",
-        description: error instanceof Error ? error.message : "Failed to reset everything",
+        description:
+          error instanceof Error ? error.message : "Failed to reset everything",
         color: "danger",
       });
       setIsResettingEverything(false);

@@ -1,9 +1,9 @@
 "use client";
 
 import { Button } from "@heroui/react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useDisconnectMetaAccount } from "@/hooks/useMeta";
-import { useState } from "react";
 
 interface MetaDisconnectActionProps {
   onDisconnected?: () => void;
@@ -29,9 +29,9 @@ export default function MetaDisconnectAction({
   };
 
   return (
-    <Button 
-      color="danger" 
-      variant="flat" 
+    <Button
+      color="danger"
+      variant="flat"
       onPress={handleDisconnect}
       isLoading={isDisconnecting}
     >

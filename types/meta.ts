@@ -57,7 +57,7 @@ export interface MetaLead {
 export interface MetaLeadForm {
   id: string;
   name: string;
-  status: 'ACTIVE' | 'ARCHIVED' | 'DELETED' | 'DRAFT';
+  status: "ACTIVE" | "ARCHIVED" | "DELETED" | "DRAFT";
   page: {
     id: string;
     name: string;
@@ -148,7 +148,7 @@ export interface LeadSyncProgress {
   total: number;
   processed: number;
   failed: number;
-  status: 'idle' | 'syncing' | 'completed' | 'failed';
+  status: "idle" | "syncing" | "completed" | "failed";
   currentPage?: string;
   error?: string;
 }

@@ -1,14 +1,8 @@
 "use client";
 
-import { memo } from "react";
-import { 
-  Card, 
-  CardBody, 
-  CardHeader, 
-  Divider, 
-  Chip
-} from "@heroui/react";
+import { Card, CardBody, CardHeader, Chip, Divider } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { memo } from "react";
 
 interface Lead {
   _id: string;
@@ -37,23 +31,41 @@ const RecentLeadsCard = memo(({ latestLeads }: RecentLeadsCardProps) => {
     <Card className="w-full">
       <CardHeader className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Recent Leads</h3>
-        <Icon icon="solar:users-group-rounded-bold" width={24} className="text-primary" />
+        <Icon
+          icon="solar:users-group-rounded-bold"
+          width={24}
+          className="text-primary"
+        />
       </CardHeader>
       <Divider />
       <CardBody>
         <div className="space-y-2">
           {latestLeads.map((lead) => (
-            <div key={lead._id} className="p-3 bg-default-50 dark:bg-default-100/20 rounded-lg">
+            <div
+              key={lead._id}
+              className="p-3 bg-default-50 dark:bg-default-100/20 rounded-lg"
+            >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium">{lead.fullName || "No Name"}</p>
-                    <Chip size="sm" variant="flat" color={
-                      lead.status === "new" ? "primary" :
-                      lead.status === "contacted" ? "secondary" :
-                      lead.status === "qualified" ? "warning" :
-                      lead.status === "converted" ? "success" : "danger"
-                    }>
+                    <p className="text-sm font-medium">
+                      {lead.fullName || "No Name"}
+                    </p>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={
+                        lead.status === "new"
+                          ? "primary"
+                          : lead.status === "contacted"
+                            ? "secondary"
+                            : lead.status === "qualified"
+                              ? "warning"
+                              : lead.status === "converted"
+                                ? "success"
+                                : "danger"
+                      }
+                    >
                       {lead.status}
                     </Chip>
                   </div>

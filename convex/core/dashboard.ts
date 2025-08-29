@@ -1,7 +1,7 @@
-import { query } from "../_generated/server";
-import { v } from "convex/values";
-import { Doc } from "../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { v } from "convex/values";
+import type { Doc } from "../_generated/dataModel";
+import { query } from "../_generated/server";
 
 export const getBasicStats = query({
   args: {},
@@ -38,7 +38,7 @@ export const getBasicStats = query({
       };
     }
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user?.organizationId) {
       return {
         totalLeads: 0,
@@ -57,9 +57,12 @@ export const getBasicStats = query({
     }
 
     // Get all leads for the organization
+    const organizationId = user.organizationId;
     const leads = await ctx.db
       .query("leads")
-      .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
       .collect();
 
     // Count leads by status
@@ -88,15 +91,17 @@ export const getBasicStats = query({
     // Get Meta integration status
     const activeIntegrations = await ctx.db
       .query("metaIntegrations")
-      .withIndex("byOrganizationAndActive", (q) => 
-        q.eq("organizationId", user.organizationId!).eq("isActive", true)
+      .withIndex("byOrganizationAndActive", (q) =>
+        q.eq("organizationId", organizationId).eq("isActive", true),
       )
       .collect();
 
     // Get latest sync job
     const latestSyncJob = await ctx.db
       .query("leadSyncJobs")
-      .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
       .order("desc")
       .first();
 
@@ -128,20 +133,23 @@ export const getLatestLeads = query({
       platform: v.optional(v.string()),
       city: v.optional(v.string()),
       campaignName: v.optional(v.string()),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user?.organizationId) return [];
 
     const limit = args.limit || 10;
 
+    const organizationId = user.organizationId;
     const leads = await ctx.db
       .query("leads")
-      .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
+      .withIndex("byOrganization", (q) =>
+        q.eq("organizationId", organizationId),
+      )
       .order("desc")
       .take(limit);
 
@@ -175,7 +183,7 @@ export const getSyncStatus = query({
         startedAt: v.optional(v.number()),
         pageId: v.string(),
         error: v.optional(v.string()),
-      })
+      }),
     ),
     recentJobs: v.array(
       v.object({
@@ -185,7 +193,7 @@ export const getSyncStatus = query({
         totalLeads: v.optional(v.number()),
         completedAt: v.optional(v.number()),
         pageId: v.string(),
-      })
+      }),
     ),
     webhookEvents: v.number(),
   }),
@@ -199,7 +207,7 @@ export const getSyncStatus = query({
       };
     }
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user?.organizationId) {
       return {
         currentJob: undefined,
@@ -209,42 +217,45 @@ export const getSyncStatus = query({
     }
 
     // Get current processing or pending job
+    const organizationId = user.organizationId;
     const processingJob = await ctx.db
       .query("leadSyncJobs")
       .withIndex("byOrganizationAndStatus", (q) =>
-        q.eq("organizationId", user.organizationId!).eq("status", "processing")
+        q.eq("organizationId", organizationId).eq("status", "processing"),
       )
       .first();
-    
+
     // Only show processing job if it's not stale (started less than 10 minutes ago)
-    const isProcessingJobStale = processingJob && processingJob.startedAt 
+    const isProcessingJobStale = processingJob?.startedAt
       ? Date.now() - processingJob.startedAt > 10 * 60 * 1000 // 10 minutes
       : false;
-    
-    const pendingJob = !processingJob || isProcessingJobStale
-      ? await ctx.db
-          .query("leadSyncJobs")
-          .withIndex("byOrganizationAndStatus", (q) =>
-            q.eq("organizationId", user.organizationId!).eq("status", "pending")
-          )
-          .first()
-      : null;
-    
-    const currentJob = (!isProcessingJobStale ? processingJob : null) || pendingJob;
+
+    const pendingJob =
+      !processingJob || isProcessingJobStale
+        ? await ctx.db
+            .query("leadSyncJobs")
+            .withIndex("byOrganizationAndStatus", (q) =>
+              q.eq("organizationId", organizationId).eq("status", "pending"),
+            )
+            .first()
+        : null;
+
+    const currentJob =
+      (!isProcessingJobStale ? processingJob : null) || pendingJob;
 
     // Get recent completed jobs - fetch completed and failed jobs separately using indexes
     const [completedJobs, failedJobs] = await Promise.all([
       ctx.db
         .query("leadSyncJobs")
         .withIndex("byOrganizationAndStatus", (q) =>
-          q.eq("organizationId", user.organizationId!).eq("status", "completed")
+          q.eq("organizationId", organizationId).eq("status", "completed"),
         )
         .order("desc")
         .take(3),
       ctx.db
         .query("leadSyncJobs")
         .withIndex("byOrganizationAndStatus", (q) =>
-          q.eq("organizationId", user.organizationId!).eq("status", "failed")
+          q.eq("organizationId", organizationId).eq("status", "failed"),
         )
         .order("desc")
         .take(3),
@@ -310,7 +321,7 @@ export const getDashboardData = query({
         isOnboarded: v.optional(v.boolean()),
         organizationId: v.optional(v.id("organizations")),
       }),
-      v.null()
+      v.null(),
     ),
     organization: v.union(
       v.object({
@@ -320,7 +331,7 @@ export const getDashboardData = query({
         activeMembers: v.optional(v.array(v.id("users"))),
         invitedMembers: v.optional(v.number()),
       }),
-      v.null()
+      v.null(),
     ),
     stats: v.object({
       totalLeads: v.number(),
@@ -349,7 +360,7 @@ export const getDashboardData = query({
         platform: v.optional(v.string()),
         city: v.optional(v.string()),
         campaignName: v.optional(v.string()),
-      })
+      }),
     ),
     syncStatus: v.object({
       currentJob: v.optional(
@@ -363,7 +374,7 @@ export const getDashboardData = query({
           startedAt: v.optional(v.number()),
           pageId: v.string(),
           error: v.optional(v.string()),
-        })
+        }),
       ),
       recentJobs: v.array(
         v.object({
@@ -373,7 +384,7 @@ export const getDashboardData = query({
           totalLeads: v.optional(v.number()),
           completedAt: v.optional(v.number()),
           pageId: v.string(),
-        })
+        }),
       ),
       webhookEvents: v.number(),
     }),
@@ -407,7 +418,7 @@ export const getDashboardData = query({
       };
     }
 
-    const user = await ctx.db.get(userId) as Doc<"users"> | null;
+    const user = (await ctx.db.get(userId)) as Doc<"users"> | null;
     if (!user || !user.email) {
       return {
         user: null,
@@ -437,7 +448,7 @@ export const getDashboardData = query({
 
     // Fetch organization data
     const organization = user.organizationId
-      ? await ctx.db.get(user.organizationId) as Doc<"organizations"> | null
+      ? ((await ctx.db.get(user.organizationId)) as Doc<"organizations"> | null)
       : null;
 
     if (!organization || !user.organizationId) {
@@ -477,6 +488,9 @@ export const getDashboardData = query({
       };
     }
 
+    // Now organizationId is guaranteed to be defined here
+    const organizationId = user.organizationId;
+
     // Parallel fetching of all data
     const [
       leads,
@@ -485,68 +499,72 @@ export const getDashboardData = query({
       processingJob,
       pendingJob,
       recentJobsResult,
-      webhookEvents
+      webhookEvents,
     ] = await Promise.all([
       // Get all leads for the organization
       ctx.db
         .query("leads")
-        .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
+        .withIndex("byOrganization", (q) =>
+          q.eq("organizationId", organizationId),
+        )
         .collect(),
-      
+
       // Get active Meta integrations
       ctx.db
         .query("metaIntegrations")
-        .withIndex("byOrganizationAndActive", (q) => 
-          q.eq("organizationId", user.organizationId!).eq("isActive", true)
+        .withIndex("byOrganizationAndActive", (q) =>
+          q.eq("organizationId", organizationId).eq("isActive", true),
         )
         .collect(),
-      
+
       // Get latest sync job for last sync time
       ctx.db
         .query("leadSyncJobs")
-        .withIndex("byOrganization", (q) => q.eq("organizationId", user.organizationId!))
+        .withIndex("byOrganization", (q) =>
+          q.eq("organizationId", organizationId),
+        )
         .order("desc")
         .first(),
-      
+
       // Get current processing job
       ctx.db
         .query("leadSyncJobs")
         .withIndex("byOrganizationAndStatus", (q) =>
-          q.eq("organizationId", user.organizationId!).eq("status", "processing")
+          q.eq("organizationId", organizationId).eq("status", "processing"),
         )
         .first(),
-      
+
       // Get pending job
       ctx.db
         .query("leadSyncJobs")
         .withIndex("byOrganizationAndStatus", (q) =>
-          q.eq("organizationId", user.organizationId!).eq("status", "pending")
+          q.eq("organizationId", organizationId).eq("status", "pending"),
         )
         .first(),
-      
+
       // Get recent completed and failed jobs separately using indexes
       Promise.all([
         ctx.db
           .query("leadSyncJobs")
           .withIndex("byOrganizationAndStatus", (q) =>
-            q.eq("organizationId", user.organizationId!).eq("status", "completed")
+            q.eq("organizationId", organizationId).eq("status", "completed"),
           )
           .order("desc")
           .take(3),
         ctx.db
           .query("leadSyncJobs")
           .withIndex("byOrganizationAndStatus", (q) =>
-            q.eq("organizationId", user.organizationId!).eq("status", "failed")
+            q.eq("organizationId", organizationId).eq("status", "failed"),
           )
           .order("desc")
           .take(3),
       ]),
-      
+
       // Count webhook events
       ctx.db
         .query("metaWebhookEvents")
         .withIndex("byProcessed", (q) => q.eq("processed", true))
-        .collect()
+        .collect(),
     ]);
 
     // Process stats data
@@ -581,11 +599,12 @@ export const getDashboardData = query({
       .slice(0, 3);
 
     // Process sync status
-    const isProcessingJobStale = processingJob && processingJob.startedAt 
+    const isProcessingJobStale = processingJob?.startedAt
       ? Date.now() - processingJob.startedAt > 10 * 60 * 1000
       : false;
-    
-    const currentJob = (!isProcessingJobStale ? processingJob : null) || pendingJob;
+
+    const currentJob =
+      (!isProcessingJobStale ? processingJob : null) || pendingJob;
 
     // Get latest leads
     const limit = args.leadLimit || 5;
