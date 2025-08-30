@@ -249,6 +249,26 @@ Use content layers for visual hierarchy:
    - Use CSS classes over inline styles
    - Leverage Tailwind's purge for production
 
+5. **Type Definitions**
+   - **ALWAYS import types from `/types` folder**
+   - **NEVER define types directly in component files**
+   - Centralize all type definitions for reusability
+   - Example:
+     ```tsx
+     // ✅ GOOD - Import from types folder
+     import { User, Organization, DashboardData } from "@/types/core";
+     import { ShopifyOrder, ShopifyProduct } from "@/types/shopify";
+     
+     // ❌ BAD - Defining types in component
+     interface User {
+       id: string;
+       name: string;
+     }
+     
+     // ❌ BAD - Inline type definitions
+     const Component = ({ data }: { data: { id: string; name: string } }) => {
+     ```
+
 ## Theme Configuration
 
 The custom Meyoo theme is defined in `/style/hero.ts` with:

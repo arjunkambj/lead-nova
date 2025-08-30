@@ -1,16 +1,9 @@
 "use client";
 
-import {
-  Avatar,
-  Button,
-  Chip,
-  Radio,
-  RadioGroup,
-  Spinner,
-} from "@heroui/react";
+import { Avatar, Button, Card, CardBody, Chip, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useConnectMetaPage } from "@/hooks/useMeta";
 
@@ -35,6 +28,7 @@ export default function PageSelectionView() {
   const [pages, setPages] = useState<PageInfo[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string>("");
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isLoadingPages, setIsLoadingPages] = useState(true);
   const [tokens, setTokens] = useState<{
     userAccessToken: string;
     tokenExpiresAt: number;
@@ -71,9 +65,11 @@ export default function PageSelectionView() {
         console.error("Failed to parse tokens:", error);
       }
     }
+
+    setIsLoadingPages(false);
   }, [searchParams, router]);
 
-  const handlePageSelect = async () => {
+  const handlePageSelect = useCallback(async () => {
     if (!selectedPageId) {
       toast.error("Please select a page to continue");
       return;
@@ -126,11 +122,16 @@ export default function PageSelectionView() {
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [selectedPageId, pages, tokens, connectMetaPage, router]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     router.push("/onboarding/meta-connect");
-  };
+  }, [router]);
+
+  const selectedPage = useMemo(
+    () => pages.find((p) => p.id === selectedPageId),
+    [pages, selectedPageId],
+  );
 
   return (
     <div>
@@ -139,77 +140,128 @@ export default function PageSelectionView() {
         Choose which page to connect
       </p>
 
-      <div className="space-y-6 max-w-2xl">
-        {pages.length === 0 ? (
+      <div className="space-y-6 w-full">
+        {isLoadingPages ? (
+          <div className="space-y-3">
+            {/* Skeleton loading for pages */}
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="rounded-xl">
+                <div className="h-24 rounded-xl bg-default-300" />
+              </Skeleton>
+            ))}
+          </div>
+        ) : pages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <Spinner size="lg" />
-            <p className="text-default-500 mt-4">Loading available pages...</p>
+            <Icon
+              icon="solar:facebook-bold"
+              width={48}
+              className="text-default-300 mb-4"
+            />
+            <p className="text-default-600 mb-2">No pages found</p>
+            <p className="text-sm text-default-500">
+              Please ensure you have admin access to at least one Facebook page
+            </p>
+            <Button
+              variant="flat"
+              size="lg"
+              onPress={handleBack}
+              className="mt-6"
+              startContent={
+                <Icon icon="solar:alt-arrow-left-linear" width={20} />
+              }
+            >
+              Back to Meta Connect
+            </Button>
           </div>
         ) : (
           <>
-            <RadioGroup
-              value={selectedPageId}
-              onValueChange={setSelectedPageId}
-              className="gap-3"
-            >
-              {pages.map((page) => (
-                <Radio
-                  key={page.id}
-                  value={page.id}
-                  classNames={{
-                    base: `
-                      relative p-6 rounded-xl border cursor-pointer transition-all max-w-full
-                      data-[selected=true]:border-primary data-[selected=true]:bg-primary-50/30 
-                      data-[selected=true]:dark:bg-primary-100/10
-                      border-default-200 hover:border-default-300 hover:bg-default-50 
-                      dark:hover:bg-default-100/5
-                    `,
-                    label: "w-full",
-                    labelWrapper: "w-full m-0",
-                    control: "hidden",
-                  }}
-                >
-                  <div className="flex items-center gap-4 w-full">
-                    {/* Avatar with subtle border */}
-                    <Avatar
-                      src={page.picture?.data?.url}
-                      icon={
-                        <Icon
-                          icon="solar:facebook-bold"
-                          width={20}
-                          height={20}
-                        />
+            <div className="space-y-3 w-full">
+              {pages.map((page) => {
+                const isSelected = selectedPageId === page.id;
+                return (
+                  <Card
+                    key={page.id}
+                    isPressable
+                    onPress={() => setSelectedPageId(page.id)}
+                    className={`
+                      w-full transition-all cursor-pointer
+                      ${
+                        isSelected
+                          ? "border-2 border-primary"
+                          : "border-2 border-transparent bg-content1 hover:bg-content2"
                       }
-                      className="bg-primary ring-1 ring-default-200/50"
-                      size="md"
-                    />
+                    `}
+                  >
+                    <CardBody className="p-4">
+                      <div className="flex items-center gap-4">
+                        {/* Avatar */}
+                        <Avatar
+                          src={page.picture?.data?.url}
+                          icon={
+                            <Icon
+                              icon="solar:facebook-bold"
+                              width={20}
+                              height={20}
+                            />
+                          }
+                          className="bg-primary flex-shrink-0"
+                          size="md"
+                        />
 
-                    {/* Page info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <p className="text-lg font-semibold">{page.name}</p>
-                        {page.lead_forms_count !== undefined &&
-                          page.lead_forms_count > 0 && (
-                            <Chip size="sm" color="success" variant="flat">
-                              {page.lead_forms_count} Lead Form
-                              {page.lead_forms_count !== 1 ? "s" : ""}
-                            </Chip>
-                          )}
+                        {/* Page info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground truncate">
+                            {page.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-sm text-default-500">
+                              {page.category || "Social Media Agency"}
+                            </p>
+                            {page.lead_forms_count !== undefined &&
+                              page.lead_forms_count > 0 && (
+                                <Chip size="sm" color="success" variant="flat">
+                                  {page.lead_forms_count} Lead Form
+                                  {page.lead_forms_count !== 1 ? "s" : ""}
+                                </Chip>
+                              )}
+                          </div>
+                        </div>
+
+                        {/* Radio button */}
+                        <div className="flex-shrink-0">
+                          <div
+                            className={`
+                            w-5 h-5 rounded-full border-2 transition-colors
+                            ${
+                              isSelected
+                                ? "border-primary"
+                                : "border-default-300"
+                            }
+                          `}
+                          >
+                            <div
+                              className={`
+                              w-full h-full rounded-full flex items-center justify-center
+                              transition-transform ${isSelected ? "scale-100" : "scale-0"}
+                            `}
+                            >
+                              <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-default-500 mt-0.5">
-                        {page.category || "Social Media Agency"}
-                      </p>
-                    </div>
-                  </div>
-                </Radio>
-              ))}
-            </RadioGroup>
+                    </CardBody>
+                  </Card>
+                );
+              })}
+            </div>
 
             <div className="flex justify-between pt-4">
               <Button
                 variant="flat"
                 size="lg"
                 onPress={handleBack}
+                isDisabled={isConnecting}
                 startContent={
                   <Icon icon="solar:alt-arrow-left-linear" width={20} />
                 }
@@ -222,12 +274,18 @@ export default function PageSelectionView() {
                 size="lg"
                 onPress={handlePageSelect}
                 isLoading={isConnecting}
-                isDisabled={!selectedPageId}
+                isDisabled={!selectedPageId || isConnecting}
                 endContent={
-                  <Icon icon="solar:alt-arrow-right-linear" width={20} />
+                  !isConnecting && (
+                    <Icon icon="solar:alt-arrow-right-linear" width={20} />
+                  )
                 }
               >
-                Connect Selected Page
+                {isConnecting
+                  ? "Connecting..."
+                  : selectedPage
+                    ? `Connect ${selectedPage.name}`
+                    : "Select a Page"}
               </Button>
             </div>
           </>

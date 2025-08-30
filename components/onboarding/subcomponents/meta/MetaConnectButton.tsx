@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Spinner } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -29,13 +29,12 @@ export default function MetaConnectButton() {
       className="w-full"
       size="lg"
       startContent={
-        isConnecting ? (
-          <Spinner size="sm" color="white" />
-        ) : (
+        !isConnecting && (
           <Icon icon="solar:facebook-bold" width={20} height={20} />
         )
       }
       onPress={handleConnect}
+      isLoading={isConnecting}
       isDisabled={isConnecting}
     >
       {isConnecting ? "Connecting..." : "Connect with Meta"}

@@ -2,6 +2,51 @@
 
 ## 🚨 Critical Performance Patterns
 
+### 0. Strategic Use of useCallback and memo
+
+#### ❌ Anti-pattern: Overusing useCallback and memo
+```tsx
+// BAD - Unnecessary memoization increases memory usage
+const SimpleComponent = memo(() => <div>Static content</div>);
+const staticValue = useMemo(() => "constant", []); // Pointless for primitives
+const staticCallback = useCallback(() => console.log('hello'), []); // No dependencies, no benefit
+```
+
+#### ✅ Best Practice: Use Only When Necessary
+```tsx
+// GOOD - Memoize only when it provides real benefits:
+
+// 1. Expensive computations
+const expensiveResult = useMemo(() => 
+  heavyCalculation(data), [data]
+);
+
+// 2. Preventing child re-renders (only if child is memoized)
+const MemoizedChild = memo(ChildComponent);
+const handleClick = useCallback((id) => {
+  // Callback passed to memoized child
+  updateItem(id);
+}, [updateItem]);
+
+// 3. Effect dependencies
+const options = useMemo(() => ({ 
+  filter: activeFilter,
+  sort: sortOrder 
+}), [activeFilter, sortOrder]);
+
+useEffect(() => {
+  fetchData(options);
+}, [options]); // Stable reference prevents unnecessary fetches
+```
+
+**When NOT to use memo/useCallback:**
+- Simple components with primitive props
+- Callbacks passed to non-memoized children
+- Values that change on every render anyway
+- Inline styles or simple objects (unless in effects/deps)
+
+**Impact:** Reduces memory overhead by 20-30%, cleaner code, better actual performance
+
 ### 1. Query Optimization
 
 #### ❌ Anti-pattern: Multiple Parallel Queries
@@ -429,6 +474,198 @@ lighthouse http://localhost:3000  # Lighthouse audit
 - Set up Sentry performance monitoring
 ```
 
+### 20. Prevent Content Layout Shifts (CLS)
+
+#### ❌ Anti-pattern: Loading States That Change Layout
+```tsx
+// BAD - Spinner causes layout shift when content loads
+if (!data) return <Spinner />;
+return <DataTable data={data} />;
+
+// BAD - No height reservation
+<div>
+  {loading ? <p>Loading...</p> : <Chart data={data} />}
+</div>
+```
+
+#### ✅ Best Practice: Use Skeleton Loaders & Fixed Dimensions
+```tsx
+// GOOD - Maintain layout structure during loading with skeletons
+if (!data) return <TableSkeleton rows={5} columns={4} />;
+return <DataTable data={data} />;
+
+// GOOD - Reserve space with min-height
+<div className="min-h-[400px]">
+  {loading ? <Skeleton className="h-full" /> : <Chart data={data} />}
+</div>
+
+// GOOD - Convex query pattern with skeleton loader
+const data = useQuery(api.dashboard.getData);
+return (
+  <Card className="min-h-[300px]">
+    {data === undefined ? (
+      <CardBody>
+        <Skeleton className="h-8 w-3/4 mb-4" /> {/* Title skeleton */}
+        <Skeleton className="h-4 w-full mb-2" /> {/* Content skeleton */}
+        <Skeleton className="h-4 w-5/6" />
+      </CardBody>
+    ) : (
+      <CardBody>
+        <h2>{data.title}</h2>
+        <p>{data.content}</p>
+      </CardBody>
+    )}
+  </Card>
+);
+```
+
+#### ✅ Best Practice: Suspense for Code Splitting (Not for Convex Queries)
+```tsx
+// GOOD - Use Suspense for lazy-loaded components
+import { lazy, Suspense } from 'react';
+
+const HeavyDashboard = lazy(() => import('./HeavyDashboard'));
+const ChartComponent = lazy(() => import('./ChartComponent'));
+
+function App() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <HeavyDashboard />
+    </Suspense>
+  );
+}
+
+// DON'T use Suspense for Convex queries - they handle loading internally
+// BAD - Unnecessary complexity
+<Suspense fallback={<Loading />}>
+  <ConvexDataComponent /> // useQuery handles loading state
+</Suspense>
+```
+
+#### ✅ Best Practice: Image & Media Loading
+```tsx
+// GOOD - Prevent layout shift with aspect ratio
+<div className="aspect-video relative">
+  <Image
+    src={imageUrl}
+    fill
+    alt="Product"
+    sizes="(max-width: 768px) 100vw, 50vw"
+    priority={isAboveFold}
+  />
+</div>
+
+// GOOD - Placeholder for images
+<Image
+  src={imageUrl}
+  placeholder="blur"
+  blurDataURL={thumbnailBase64}
+  alt="Product"
+/>
+```
+
+**Key Principles:**
+- Always reserve space for async content with min-height/aspect-ratio
+- Use skeleton loaders that match content structure
+- Don't use Suspense for Convex queries (they return undefined while loading)
+- Use Suspense for code splitting and lazy imports
+- Preload critical resources
+
+**Impact:** 
+- CLS score < 0.1 (good)
+- Better perceived performance
+- Improved Core Web Vitals
+- Higher SEO rankings
+- Better user experience on slow connections
+
+## 🪵 Logging Best Practices
+
+### 21. Environment-Specific Logger Usage
+
+#### ✅ Best Practice: Use Correct Logger for Each Environment
+```tsx
+// Client-side components (use client logger)
+import { logger } from '@/libs/logger/client';
+// or destructured imports
+import { info, error, time } from '@/libs/logger/client';
+
+// Server-side code (API routes, server components)
+import { logger } from '@/libs/logger/server';
+// or destructured imports
+import { info, error, time } from '@/libs/logger/server';
+
+// Convex functions (use Convex logger - no external dependencies)
+import { logger } from '@/libs/logger/convex';
+// or destructured imports
+import { info, error, time } from '@/libs/logger/convex';
+```
+
+#### ❌ Anti-pattern: Using Wrong Logger
+```tsx
+// BAD - Using server logger in client component
+'use client';
+import { logger } from '@/libs/logger/server'; // Will cause errors
+
+// BAD - Using client logger in Convex
+// convex/myFunction.ts
+import { logger } from '@/libs/logger/client'; // Won't work in Convex
+```
+
+#### ✅ Best Practice: Structured Logging with Context
+```tsx
+// GOOD - Add context for better debugging
+logger.info('Order created', {
+  orderId: order.id,
+  userId: user.id,
+  amount: order.total,
+  items: order.items.length
+});
+
+// GOOD - Use timers for performance monitoring
+const timer = logger.time('api.fetchOrders');
+const orders = await fetchOrders();
+timer.end({ count: orders.length });
+
+// GOOD - Log errors with full context
+try {
+  await processPayment(order);
+} catch (error) {
+  logger.error('Payment processing failed', error, {
+    orderId: order.id,
+    paymentMethod: order.paymentMethod,
+    amount: order.total
+  });
+}
+```
+
+#### ✅ Best Practice: Environment-Aware Logging
+```tsx
+// Automatically handled by the logger:
+// - Development: Pretty console output with colors
+// - Production: 
+//   - Structured JSON to Axiom for monitoring
+//   - Errors to Sentry for alerting
+//   - Debug logs suppressed entirely
+
+// Use debug logs liberally in development
+logger.debug('Detailed state info', { state: currentState });
+
+// Info for important events
+logger.info('User logged in', { userId: user.id });
+
+// Warn for concerning but non-critical issues
+logger.warn('API rate limit approaching', { remaining: 10 });
+
+// Error for failures that need attention
+logger.error('Database connection failed', error);
+```
+
+**Impact:** 
+- Better debugging with structured logs
+- Automatic error tracking in production
+- Performance monitoring with timers
+- Reduced console noise in production
+
 ## ✅ Implementation Checklist
 
 ### Priority 1 - Critical (Implement First)
@@ -436,12 +673,14 @@ lighthouse http://localhost:3000  # Lighthouse audit
 - [ ] Add indexes to all database queries  
 - [ ] Remove client components from layouts
 - [ ] Fix loading state waterfalls
+- [ ] Replace spinners with skeleton loaders to prevent CLS
 
 ### Priority 2 - High Impact
-- [ ] Implement useMemo for derived values
-- [ ] Add useCallback to event handlers
+- [ ] Implement useMemo for derived values (only when necessary)
+- [ ] Add useCallback to event handlers (only for memoized children)
 - [ ] Set up route prefetching
 - [ ] Add error boundaries
+- [ ] Add min-height to containers with async content
 
 ### Priority 3 - Optimization
 - [ ] Implement optimistic updates

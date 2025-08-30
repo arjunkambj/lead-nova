@@ -1,8 +1,9 @@
 "use client";
 
-import { Avatar, Button, Chip } from "@heroui/react";
+import { Avatar, Button, Card, CardBody, Chip, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { useMetaConnectionStatus } from "@/hooks/useMeta";
 import {
@@ -23,6 +24,16 @@ export default function MetaConnectView() {
   const skipOnboardingStep = useSkipOnboardingStep();
 
   const isMetaConnected = onboardingStatus?.isMetaConnected || false;
+  const isLoading =
+    onboardingStatus === undefined || connectionStatus === undefined;
+
+  // Redirect to select-page if already connected and coming back
+  useEffect(() => {
+    if (isMetaConnected && connectionStatus?.pageId) {
+      // If Meta is already connected, redirect to select-page step
+      router.push("/onboarding/select-page");
+    }
+  }, [isMetaConnected, connectionStatus?.pageId, router]);
 
   const handleContinue = async () => {
     if (
@@ -64,67 +75,79 @@ export default function MetaConnectView() {
             : "Start receiving leads from Facebook"}
         </p>
 
-        {isMetaConnected && connectionStatus ? (
+        {isLoading ? (
+          <div className="space-y-4">
+            {/* Skeleton for connected page info */}
+            <Skeleton className="rounded-xl">
+              <Card>
+                <CardBody className="p-4">
+                  <div className="h-16 rounded-xl bg-default-300" />
+                </CardBody>
+              </Card>
+            </Skeleton>
+
+            {/* Skeleton for buttons */}
+            <Skeleton className="rounded-lg">
+              <div className="h-12 rounded-lg bg-default-300" />
+            </Skeleton>
+          </div>
+        ) : isMetaConnected && connectionStatus ? (
           <div className="space-y-6">
             {/* Connected Page Info */}
-            <div className="flex items-center gap-4 p-4 bg-content2 rounded-lg">
-              <Avatar
-                icon={
-                  <Icon icon="solar:facebook-bold" width={20} height={20} />
-                }
-                className="bg-primary"
-              />
-              <div className="flex-1">
-                <p className="font-medium">{connectionStatus.pageName}</p>
-                <p className="text-sm text-default-500">
-                  Page ID: {connectionStatus.pageId}
-                </p>
-              </div>
-              <Chip color="success" size="sm" variant="flat">
-                Connected
-              </Chip>
-            </div>
-
-            {/* Connection Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-default-500">Last Synced</p>
-                <p className="text-sm font-medium">
-                  {connectionStatus.lastSyncedAt
-                    ? new Date(connectionStatus.lastSyncedAt).toLocaleString()
-                    : "Never"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-default-500">Lead Count</p>
-                <p className="text-sm font-medium">
-                  {connectionStatus.leadCount || 0}
-                </p>
-              </div>
-            </div>
+            <Card className="w-full">
+              <CardBody className="p-4">
+                <div className="flex items-center gap-4">
+                  <Avatar
+                    icon={
+                      <Icon icon="solar:facebook-bold" width={20} height={20} />
+                    }
+                    className="bg-primary flex-shrink-0"
+                    size="md"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground truncate">
+                      {connectionStatus.pageName}
+                    </p>
+                    <p className="text-sm text-default-500">
+                      Facebook Page Connected
+                    </p>
+                  </div>
+                  <Chip color="success" size="sm" variant="flat">
+                    Connected
+                  </Chip>
+                </div>
+              </CardBody>
+            </Card>
 
             {/* Actions */}
-            <div className="flex gap-4">
-              <MetaDisconnectAction />
+            <div className="space-y-3">
               <Button
                 color="primary"
                 onPress={handleContinue}
-                className="flex-1"
+                size="lg"
+                className="w-full"
+                endContent={
+                  <Icon icon="solar:alt-arrow-right-linear" width={20} />
+                }
               >
                 Continue
               </Button>
+
+              <div className="flex justify-end">
+                <MetaDisconnectAction />
+              </div>
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <MetaConnectButton />
 
             <div className="flex justify-end">
               <Button
-                variant="bordered"
-                color="danger"
-                size="sm"
+                variant="flat"
+                size="md"
                 onPress={handleSkip}
+                className="text-default-500"
               >
                 Skip for now
               </Button>
