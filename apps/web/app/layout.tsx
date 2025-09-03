@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import "../styles/globals.css";
-import { i } from "framer-motion/client";
-import { Provider } from "../components/Provider";
+import "@/styles/globals.css";
+import { Provider } from "@/components/Provider";
 
 export const metadata: Metadata = {
   title: "Create Next App",

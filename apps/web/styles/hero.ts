@@ -222,6 +222,11 @@ const heroConfig = heroui({
   },
   layout: {
     disabledOpacity: "0.5",
+    boxShadow: {
+      small: "none",
+      medium: "none",
+      large: "none",
+    },
   },
 });
 
