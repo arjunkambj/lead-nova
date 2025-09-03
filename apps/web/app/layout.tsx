@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <ClerkProvider signInUrl="/auth">
       <html lang="en">
-        <body>
+        <body className="min-h-dvh">
           <Provider>{children}</Provider>
         </body>
       </html>
