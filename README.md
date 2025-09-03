@@ -1,135 +1,67 @@
-# Turborepo starter
+# Botwisely Monorepo
 
-This Turborepo starter is maintained by the Turborepo core team.
+Saat kit with Monorepo for a Next.js web app with Clerk authentication, Convex backend, and a shared UI library powered by HeroUI and Tailwind CSS v4. Orchestrated with Turborepo and Bun.
 
-## Using this example
+## Apps & Packages
 
-Run the following command:
+- apps/web: Next.js App Router UI, Clerk auth, HeroUI theme.
+- apps/convex: Convex backend (functions in `apps/convex/convex`).
+- packages/ui: Shared React components.
+- packages/eslint-config, packages/typescript-config: Shared configs.
 
-```sh
-npx create-turbo@latest
+## Requirements
+
+- Node >= 18 and Bun installed.
+- Environment variables set per app (see below).
+
+## Setup
+
+```bash
+bun install
 ```
 
-## What's inside?
+## Development
 
-This Turborepo includes the following packages/apps:
+- All apps: `bun run dev`
+- Single app: `bun run dev --filter=web` or `--filter=convex`
+- Lint: `bun run lint` • Type-check: `bun run check-types` • Format: `bun run format`
 
-### Apps and Packages
+## Build & Run
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- Build all: `bun run build`
+- Build one: `bun run build --filter=web`
+- Start web (after build): `bun --filter=web run start`
+- Convex backend (dev): `bun --filter=convex run dev`
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Environment Variables
 
-### Utilities
+Create `.env.local` in each app:
 
-This Turborepo has some additional tools already setup for you:
+- apps/web
+  - NEXT_PUBLIC_CONVEX_URL=
+  - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+  - CLERK_SECRET_KEY=
+  - (optional) NEXT_PUBLIC_CLERK_FRONTEND_API_URL=
+- apps/convex
+  - CONVEX_DEPLOYMENT= (or run via `convex dev` to auto-manage)
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## UI & Styling (HeroUI + Tailwind v4)
 
-### Build
+- Global CSS: `apps/web/styles/globals.css` contains Tailwind v4 and HeroUI plugin:
+  - `@import "tailwindcss";`
+  - `@plugin './hero.ts';` with theme tokens in `styles/hero.ts`.
+- Provider: `HeroUIProvider` is applied in `apps/web/components/Provider.tsx`.
+- Usage: `import { Button } from '@heroui/react'` and render components directly.
 
-To build all apps and packages, run the following command:
+## Authentication (Clerk)
 
-```
-cd my-turborepo
+- `ClerkProvider` wraps the app in `apps/web/app/layout.tsx`.
+- Sign-in route at `app/(auth)/sign-in/[[...sign-in]]/page.tsx` using `<SignIn />`.
+- Use `import { SignedIn, SignedOut, useUser } from '@clerk/nextjs'` in pages/components.
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+## Convex Integration
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+- Client is configured in `apps/web/components/ConvexClientProvider.tsx` using `ConvexProviderWithClerk`.
+- Ensure `NEXT_PUBLIC_CONVEX_URL` points to your deployment; run backend locally with `bun --filter=convex run dev`.
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+For contribution guidelines, see AGENTS.md.
