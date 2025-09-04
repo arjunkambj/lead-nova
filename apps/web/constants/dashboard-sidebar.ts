@@ -3,18 +3,18 @@ export const DASHBOARD_SIDEBAR_ITEMS = [
     label: "Leads",
     items: [
       {
-        key: "my-leads",
-        href: "/my-leads",
-        icon: "solar:user-linear",
-        activeIcon: "solar:user-bold",
-        label: "My Leads",
-      },
-      {
         key: "all-leads",
         href: "/all-leads",
         icon: "solar:users-group-rounded-linear",
         activeIcon: "solar:users-group-rounded-bold",
         label: "All Leads",
+      },
+      {
+        key: "my-leads",
+        href: "/my-leads",
+        icon: "solar:user-linear",
+        activeIcon: "solar:user-bold",
+        label: "My Leads",
       },
       {
         key: "new-leads",
@@ -34,13 +34,6 @@ export const DASHBOARD_SIDEBAR_ITEMS = [
         icon: "solar:smartphone-2-linear",
         activeIcon: "solar:smartphone-2-bold",
         label: "Automations",
-      },
-      {
-        key: "sources",
-        href: "/sources",
-        icon: "solar:database-linear",
-        activeIcon: "solar:database-bold",
-        label: "Sources",
       },
       {
         key: "page-forms",
