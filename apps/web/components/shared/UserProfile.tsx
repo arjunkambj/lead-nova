@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuthActions } from "@convex-dev/auth/react";
 import {
   Avatar,
   Dropdown,
@@ -13,6 +12,8 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useCallback } from "react";
+import { useUser,useAuth } from "@clerk/nextjs";
+
 
 const navigationItems = [
   {
@@ -37,16 +38,13 @@ const navigationItems = [
 
 const UserProfile = React.memo(() => {
   const router = useRouter();
+  const { user } = useUser();
+  const { signOut } = useAuth();
 
   const handleLogout = useCallback(async () => {
-    router.push("/auth");
-  }, [router]);
-
-  const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    image: "https://example.com/image.png",
-  };
+    await signOut();
+    router.push("/sign-in");
+  }, [router, signOut]);
 
   return (
     <Dropdown placement="bottom-end">
@@ -54,10 +52,10 @@ const UserProfile = React.memo(() => {
         <Avatar
           as="button"
           className="transition-transform"
-          name={user.name}
+          name={user?.fullName || ""}
           size="md"
           radius="sm"
-          src={user.image || undefined}
+          src={user?.imageUrl || undefined}
         />
       </DropdownTrigger>
       <DropdownMenu>
@@ -67,8 +65,8 @@ const UserProfile = React.memo(() => {
             className="h-14 gap-2"
             textValue="Profile"
           >
-            <p className="font-semibold">{user.name}</p>
-            <p className="text-xs text-default-500">{user.email}</p>
+            <p className="font-semibold">{user?.fullName || ""}</p>
+            <p className="text-xs text-default-500">{user?.emailAddresses[0]?.emailAddress || ""}</p>
           </DropdownItem>
         </DropdownSection>
         <DropdownSection showDivider>
