@@ -16,6 +16,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "convex": "^1.26.2"
+    "convex": "^1.26.2",
+    "svix": "^1.76.0"
   }
 }
