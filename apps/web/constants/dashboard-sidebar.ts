@@ -1,13 +1,25 @@
 export const DASHBOARD_SIDEBAR_ITEMS = [
   {
-    label: "AI",
+    label: "Can be Anything",
     items: [
       {
-        key: "agent",
-        href: "/agent",
-        icon: "solar:robot-linear",
-        activeIcon: "solar:robot-bold",
-        label: "Agent",
+        key: "lorum-ipsum-2",
+        href: "/lorum-ipsum-2",
+        icon: "solar:chart-square-linear",
+        activeIcon: "solar:chart-square-bold",
+        label: "Lorum Ipsum",
+      },
+    ],
+  },
+  {
+    label: "Can be Anything 2",
+    items: [
+      {
+        key: "lorum-ipsum",
+        href: "/lorum-ipsum",
+        icon: "solar:layers-minimalistic-linear",
+        activeIcon: "solar:layers-minimalistic-bold",
+        label: "Lorum Ipsum",
       },
     ],
   },
@@ -15,18 +27,11 @@ export const DASHBOARD_SIDEBAR_ITEMS = [
 
 export const DASHBOARD_FOOTER_ITEMS = [
   {
-    key: "orgs",
-    href: "/orgs",
-    icon: "solar:team-linear",
-    activeIcon: "solar:team-bold",
-    label: "Teams & Orgs",
-  },
-  {
-    key: "integrations",
-    href: "/integrations",
-    icon: "hugeicons:connect",
-    activeIcon: "hugeicons:connect",
-    label: "Integrations",
+    key: "team-management",
+    href: "/team-management",
+    icon: "solar:users-group-two-rounded-linear",
+    activeIcon: "solar:users-group-two-rounded-bold",
+    label: "Team Management",
   },
   {
     key: "settings",

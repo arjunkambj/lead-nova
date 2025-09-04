@@ -1,80 +1,112 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Logo } from "../shared/Logo";
-import { Button } from "@heroui/react";
+import { Icon } from "@iconify/react";
 import Link from "next/link";
+import { homeNavLinks } from "@/constants/homeNavlink";
+import { Button } from "@heroui/react";
 import { Authenticated, Unauthenticated } from "convex/react";
-
-const navlinks = [
-  {
-    href: "/home",
-    label: "Features",
-  },
-  {
-    href: "/pricing",
-    label: "Pricing",
-  },
-  {
-    href: "/partners",
-    label: "Partners",
-  },
-  {
-    href: "/contact",
-    label: "Contact",
-  },
-];
-
-export const Navbar = () => {
+export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
+    const onScroll = () => {
       setIsScrolled(window.scrollY > 4);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
   return (
     <header
-      className={`absolute top-0 py-3 px-2 mx-auto justify-between items-center z-20 w-full ${
-        isScrolled
-          ? "bg-content1 border border-divider rounded-2xl scale-[.98] mt-3 max-w-5xl mx-auto transition-all duration-300"
-          : " max-w-7xl mx-auto border-hidden"
-      }`}
+      className={`fixed inset-x-0 top-4 z-50 mx-auto w-full bg-transparent px-2`}
     >
-      <div className="flex items-center gap-2  flex justify-between w-full">
-        <Logo />
+      <nav
+        className={`mx-auto flex max-w-4xl items-center justify-between rounded-2xl border border-divider/70 px-4 py-3 sm:px-5 bg-content1/70 backdrop-blur-md shadow-xs transition-[transform,background,box-shadow] duration-300 ease-out ${
+          isScrolled ? "scale-[0.97]" : "scale-[0.99]"
+        } transition-transform`}
+      >
+        <div className="flex items-center gap-2">
+          <Logo />
+        </div>
 
-        <div className="flex items-center gap-8">
-          {navlinks.map((link) => (
-            <NavbarLink key={link.href} href={link.href} label={link.label} />
+        <div className="hidden items-center gap-6 md:flex">
+          {homeNavLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={{
+                pathname: "/",
+                hash: link.href.startsWith("#")
+                  ? link.href.slice(1)
+                  : undefined,
+              }}
+              className="text-sm text-default-600 transition-colors hover:text-primary-600"
+            >
+              {link.label}
+            </Link>
           ))}
         </div>
+
         <Authenticated>
-          <Button color="primary" radius="sm" as={Link} href="/overview">
-            Go to App
+          <Button as={Link} href="/overview" color="primary">
+            App
           </Button>
         </Authenticated>
         <Unauthenticated>
-          <Button color="primary" radius="sm" as={Link} href="/sign-in">
+          <Button as={Link} href="/sign-in" color="primary">
             Get Started
           </Button>
         </Unauthenticated>
-      </div>
+
+        <button
+          aria-label="Toggle menu"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl  md:hidden"
+          onClick={() => setMobileOpen((v) => !v)}
+        >
+          <Icon
+            icon={mobileOpen ? "lucide:x" : "lucide:menu"}
+            width={24}
+            height={24}
+          />
+        </button>
+      </nav>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="mx-auto mt-2 w-full max-w-5xl rounded-2xl border border-divider/50 bg-content1 p-3 shadow-sm md:hidden">
+          <div className="flex flex-col gap-1">
+            {homeNavLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={{
+                  pathname: "/",
+                  hash: link.href.startsWith("#")
+                    ? link.href.slice(1)
+                    : undefined,
+                }}
+                className="rounded-lg px-3 py-2 text-sm text-default-700 hover:bg-content2"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Button
+              as={Link}
+              href="/sign-in"
+              color="primary"
+              radius="lg"
+              size="sm"
+              className="mt-1 w-full"
+              onPress={() => setMobileOpen(false)}
+            >
+              Get Started
+            </Button>
+          </div>
+        </div>
+      )}
     </header>
   );
-};
-
-const NavbarLink = ({ href, label }: { href: string; label: string }) => {
-  return (
-    <Link
-      href={href}
-      className="text-sm font-medium hover:underline underline-offset-8 hover:text-primary"
-    >
-      {label}
-    </Link>
-  );
-};
+}
