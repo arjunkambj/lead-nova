@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
-import { footerItems } from "../../constants/dashboard-sidebar";
+import { footerItems } from "@/constants/dashboard-sidebar";
 
 export const FooterItems = () => {
   const pathname = usePathname();
@@ -24,7 +24,7 @@ export const FooterItems = () => {
             "no-underline w-full",
             isActive(item.href || "")
               ? "bg-primary text-white font-medium shadow-sm"
-              : "text-default-800 hover:text-default-900 hover:bg-default-200"
+              : "text-default-800 hover:text-default-900 hover:bg-default-200",
           )}
           href={item.href || "#"}
           prefetch={true}
@@ -36,10 +36,10 @@ export const FooterItems = () => {
               icon={item.icon}
             />
           )}
-          <span className="text-sm font-medium">{item.label}</span>
+          <span className="text-sm font-medium truncate">{item.label}</span>
         </Link>
       )),
-    [isActive]
+    [isActive],
   );
 
   return (

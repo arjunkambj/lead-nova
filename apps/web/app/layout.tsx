@@ -14,7 +14,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider signInUrl="/auth">
+    <ClerkProvider  appearance={{
+      theme: 'simple',
+    }} signInUrl="/auth">
       <html lang="en">
         <body className="min-h-dvh w-full">
           <Provider>{children}</Provider>
