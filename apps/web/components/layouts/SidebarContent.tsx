@@ -25,9 +25,9 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
 
   const containerClasses = useMemo(
     () =>
-      `relative flex h-full max-w-[280px] flex-1 flex-col bg-content1 rounded-2xl border border-divider transition-all duration-300 ease-in-out ${
+      `relative flex h-full max-w-66 flex-1 flex-col bg-content1  border border-divider transition-all duration-300 ease-in-out ${
         isOpen
-          ? "w-[280px] p-6 opacity-100 overflow-visible"
+          ? "w-66 p-6 opacity-100 overflow-visible"
           : "w-0 p-0 opacity-0 overflow-hidden"
       }`,
     [isOpen],
@@ -71,9 +71,9 @@ const SidebarContent = React.memo(({ onClose }: SidebarContentProps) => {
         aria-current={pathname === "/overview" ? "page" : undefined}
         className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 min-h-9",
-          "no-underline w-full mb-2",
+          "no-underline w-full mb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
           pathname === "/overview"
-            ? "bg-primary text-white font-medium shadow-sm"
+            ? "bg-primary text-primary-foreground font-medium shadow-sm"
             : "text-default-800 hover:text-default-900 hover:bg-default-200",
         )}
         href="/overview"

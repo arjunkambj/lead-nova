@@ -45,9 +45,9 @@ const SidebarMenu = ({ items, className }: SidebarMenuProps) => {
         aria-current={isActive(item.href || "") ? "page" : undefined}
         className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 min-h-9",
-          "no-underline w-full",
+          "no-underline w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
           isActive(item.href || "")
-            ? "bg-primary text-white font-medium shadow-sm"
+            ? "bg-primary text-primary-foreground font-medium shadow-sm"
             : "text-default-800 hover:text-default-900 hover:bg-default-200",
         )}
         href={item.href || "#"}
@@ -77,7 +77,7 @@ const SidebarMenu = ({ items, className }: SidebarMenuProps) => {
           trigger:
             "px-3 py-0 min-h-9 h-9 hover:bg-transparent data-[hover=true]:bg-transparent focus-visible:ring-0 focus:ring-0 ring-0",
           content: "py-0 pl-0",
-          indicator: "text-default-500 data-[open=true]:rotate-90",
+          indicator: "text-default-600 data-[open=true]:rotate-90",
         }}
         indicator={
           <Icon
@@ -92,7 +92,7 @@ const SidebarMenu = ({ items, className }: SidebarMenuProps) => {
             {category.icon && (
               <Icon
                 aria-hidden
-                className="text-default-500"
+                className="text-default-600"
                 icon={category.icon}
                 width={18}
               />
