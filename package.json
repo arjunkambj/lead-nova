@@ -1,5 +1,5 @@
 {
-  "name": "botwisely",
+  "name": "leadnova",
   "private": true,
   "scripts": {
     "build": "turbo run build",
