@@ -85,7 +85,7 @@ const heroConfig = heroui({
         // Default - Zinc for professional cool grays
         default: {
           50: "#fafafa",
-          100: "#f4f4f5",
+          100: "#f4f4f4",
           200: "#e4e4e7",
           300: "#d4d4d8",
           400: "#a1a1aa",
@@ -95,7 +95,7 @@ const heroConfig = heroui({
           800: "#27272a",
           900: "#18181b",
           foreground: "#18181b",
-          DEFAULT: "#d4d4d8",
+          DEFAULT: "#f4f4f4",
         },
         // Backgrounds and Content
         background: "#fafafa",
