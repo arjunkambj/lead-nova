@@ -26,6 +26,25 @@ export const DASHBOARD_SIDEBAR_ITEMS = [
     ],
   },
   {
+    label: "ACTIVITIES",
+    items: [
+      {
+        key: "tasks-and-follow-ups",
+        href: "/tasks-and-follow-ups",
+        icon: "solar:smartphone-2-linear",
+        activeIcon: "solar:smartphone-2-bold",
+        label: "Tasks & Follow-ups",
+      },
+      {
+        key: "calendar",
+        href: "/calendar",
+        icon: "solar:document-text-linear",
+        activeIcon: "solar:document-text-bold",
+        label: "Calendar",
+      },
+    ],
+  },
+  {
     label: "Automations",
     items: [
       {
